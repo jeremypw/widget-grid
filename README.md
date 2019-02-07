@@ -6,6 +6,7 @@ Fast scrollable, zoomable, resizable display of widgets in a grid.
 * Potentially suitable as a substitute for Gtk.IconView for some purposes.
 * Demo program uses pantheon-file-core as a source of zoomable file objects with icons for display.
 
+![Screenshot](data/Screenshot1.png)
 
 ## Building, Testing, and Installation
 
