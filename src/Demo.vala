@@ -176,53 +176,13 @@ public class DemoWindow : Gtk.ApplicationWindow {
         construct {
             var popover = new Gtk.Popover (this);
             var listbox = new Gtk.ListBox ();
-            var simple_button = new Gtk.Button.with_label ("Simple Unsorted View");
-            simple_button.xalign = 0.0f;
-            simple_button.clicked.connect (() => {
-                handle_button (ViewType.SIMPLE);
-            });
 
-            listbox.add (simple_button);
-
-            var simple_sorted_button = new Gtk.Button.with_label ("Simple Sorted View");
-            simple_sorted_button.xalign = 0.0f;
-            simple_sorted_button.clicked.connect (() => {
-                handle_button (ViewType.SIMPLE_SORTED);
-            });
-
-            listbox.add (simple_sorted_button);
-
-            var simple_unsorted_large_button = new Gtk.Button.with_label ("Large Unsorted Model");
-            simple_unsorted_large_button.xalign = 0.0f;
-            simple_unsorted_large_button.clicked.connect (() => {
-                handle_button (ViewType.SIMPLE_LARGE_MODEL);
-            });
-
-            listbox.add (simple_unsorted_large_button);
-
-            var simple_unsorted_very_large_button = new Gtk.Button.with_label ("Very Large Unsorted Model");
-            simple_unsorted_very_large_button.xalign = 0.0f;
-            simple_unsorted_very_large_button.clicked.connect (() => {
-                handle_button (ViewType.SIMPLE_VERY_LARGE_MODEL);
-            });
-
-            listbox.add (simple_unsorted_large_button);
-
-            var simple_sorted_large_button = new Gtk.Button.with_label ("Large Sorted Model");
-            simple_sorted_large_button.xalign = 0.0f;
-            simple_sorted_large_button.clicked.connect (() => {
-                handle_button (ViewType.SORTED_LARGE_MODEL);
-            });
-
-            listbox.add (simple_sorted_large_button);
-
-            var simple_sorted_very_large_button = new Gtk.Button.with_label ("Very Large Sorted Model");
-            simple_sorted_very_large_button.xalign = 0.0f;
-            simple_sorted_very_large_button.clicked.connect (() => {
-                handle_button (ViewType.SORTED_VERY_LARGE_MODEL);
-            });
-
-            listbox.add (simple_sorted_very_large_button);
+            listbox.add (make_viewtype_button ("Simple Unsorted View", ViewType.SIMPLE));
+            listbox.add (make_viewtype_button ("Simple Sorted View", ViewType.SIMPLE_SORTED));
+            listbox.add (make_viewtype_button ("Large Unsorted Model", ViewType.SIMPLE_LARGE_MODEL));
+            listbox.add (make_viewtype_button ("Very Large Unsorted Model", ViewType.SIMPLE_VERY_LARGE_MODEL));
+            listbox.add (make_viewtype_button ("Large Sorted Model", ViewType.SORTED_LARGE_MODEL));
+            listbox.add (make_viewtype_button ("Very Large Sorted Model", ViewType.SORTED_VERY_LARGE_MODEL));
 
             popover.add (listbox);
             popover.show_all ();
@@ -241,6 +201,16 @@ public class DemoWindow : Gtk.ApplicationWindow {
         private void handle_button (ViewType type) {
             popover.hide ();
             change_view (type);
+        }
+
+        private Gtk.Button make_viewtype_button (string label, ViewType type) {
+            var button = new Gtk.Button.with_label (label);
+            button.xalign = 0.0f;
+            button.clicked.connect (() => {
+                handle_button (type);
+            });
+
+            return button;
         }
     }
 }
