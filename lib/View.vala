@@ -37,7 +37,6 @@ public class View : Gtk.Grid {
     public int n_items = 0;
     public int n_widgets = 0;
     public int pool_size = 0;
-    private int first_displayed_row = 0;
     private int first_displayed_data_index = 0;
     private int first_displayed_widget_index = 0;
     private int last_displayed_data_index = 0;
@@ -87,7 +86,6 @@ public class View : Gtk.Grid {
     public bool force_item_width { get; set; default = false; }
     public int hpadding { get; set; default = 6; }
     public int vpadding { get; set; default = 6; }
-    public int n_selected {get; private set; default = 0;}
 
     public AbstractItemFactory factory { get; construct; }
 
@@ -131,11 +129,6 @@ public class View : Gtk.Grid {
 
         notify["item-width"].connect (() => {
             column_width = item_width + hpadding + hpadding;
-        });
-
-        notify["n-selected"].connect (() => {
-            selection_changed ();
-            queue_draw ();
         });
 
         vadjustment.value_changed.connect (on_adjustment_value_changed);
@@ -317,7 +310,7 @@ public class View : Gtk.Grid {
     private void do_scroll_redraw () {
        var new_val = vadjustment.get_value ();
         bool up = new_val < last_adjustment_val;
-        first_displayed_row = (int)(new_val);
+        var first_displayed_row = (int)(new_val);
 
         if (up) {
             var row_height = (get_row_height (first_displayed_widget_index, first_displayed_data_index));
@@ -326,7 +319,7 @@ public class View : Gtk.Grid {
             offset = (new_val - (double)first_displayed_row) * first_displayed_row_height;
         }
 
-        Idle.add (() => {position_items (); return false;});
+        Idle.add (() => {position_items (first_displayed_row); return false;});
         last_adjustment_val = new_val;
     }
 
@@ -395,18 +388,13 @@ public class View : Gtk.Grid {
         item.set_max_width (item_width);
     }
 
-    private void position_items () {
-        if (n_items == 0) {
+    private void position_items (int first_displayed_row) {
+        int data_index, widget_index, row_height;
+
+        data_index = first_displayed_row * cols;
+        if (n_items == 0 || data_index >= n_items)  {
             return;
-        }
-
-        int data_index = first_displayed_row * cols;
-
-        if (data_index >= n_items) {
-            return;
-        }
-
-        if (data_index < 0) {
+        } else if (data_index < 0) {
             data_index = 0;
             offset = 0;
         }
@@ -419,9 +407,8 @@ public class View : Gtk.Grid {
         }
 
         first_displayed_row_height = get_row_height (first_displayed_widget_index, first_displayed_data_index);
-        int row_height = first_displayed_row_height;
-
-        int widget_index = first_displayed_widget_index;
+        row_height = first_displayed_row_height;
+        widget_index = first_displayed_widget_index;
         data_index = first_displayed_data_index;
 
         int y = 0 - (int)offset;
@@ -431,8 +418,6 @@ public class View : Gtk.Grid {
                 var item = widget_pool[widget_index];
                 int xx = x + hpadding;
                 int yy = y + vpadding;
-
-                item.visible = true;
 
                 if (item.get_parent () != null) {
                     layout.move (item, xx, yy);
@@ -477,7 +462,7 @@ public class View : Gtk.Grid {
 
             total_rows = new_total_rows;
 
-            first_displayed_row = first_displayed_data_index / cols;
+            var first_displayed_row = first_displayed_data_index / cols;
 
             highest_displayed_widget_index = 0;
             last_displayed_data_index = 0;
