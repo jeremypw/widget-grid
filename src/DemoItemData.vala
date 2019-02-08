@@ -24,5 +24,9 @@ public class DemoItemData : WidgetData {
     public DemoItemData (GOF.File _file) {
         file = _file;
     }
+
+    public override int compare (WidgetData b) {
+        return file.compare_by_display_name (((DemoItemData)b).file);
+    }
 }
 }

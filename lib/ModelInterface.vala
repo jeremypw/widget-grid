@@ -20,14 +20,23 @@ namespace WidgetGrid {
 
 [GenericAccessors]
 public interface Model<G> : Object {
-    public abstract void add (G data);
-    public virtual void add_array (G[] data_array) {
-        foreach (G data in data_array) {
-            add (data);
+    public abstract bool add (G data); /* Returns position inserted at (or -1 if not implemented) */
+    public virtual int add_array (G[] data_array) { /* Returns positions inserted at */
+        int added = 0;
+        var n_items = data_array.length;
+        for (int index = 0; index < n_items; index++) {
+            if (add (data_array[index])) {
+                added++;
+            }
         }
+
+        return added;
     }
 
-    public abstract void remove (G data);
-    public abstract G lookup (int index);
+    public abstract void remove_index (int index);
+    public abstract bool remove_data (G data);
+
+    public abstract G lookup_index (int index);
+    public abstract int lookup_data (G data);
 }
 }

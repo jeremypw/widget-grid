@@ -18,32 +18,60 @@
 
 namespace WidgetGrid {
 
-[GenericAccessors]
-public class SimpleModel : Object, Model<WidgetData> {
-    private Vala.ArrayList<WidgetData> list;
+public class SimpleSortedListModel : Object, Model<WidgetData> {
+    private ListStore list;
 
     construct {
-        list = new Vala.ArrayList<WidgetData> (WidgetData.equal);
+        list = new ListStore (typeof (WidgetData));
     }
 
     public bool add (WidgetData data) {
-        return list.add (data);
+        list.insert_sorted (data, ((CompareDataFunc?)(WidgetData.compare_data_func)));
+
+        return true;
     }
 
     public bool remove_data (WidgetData data) {
-        return list.remove (data);
+        /* No fast native way to do this */
+        var pos = find_data (data);
+        if (pos > -1) {
+            list.remove (pos);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public void remove_index (int index) {
-        list.remove_at (index);
+        list.remove (index);
     }
 
     public WidgetData lookup_index (int index) {
-        return list[index];
+        return (WidgetData)(list.get_item (index));
     }
 
     public int lookup_data (WidgetData data) {
-        return list.index_of (data);
+        return find_data (data);
+    }
+
+    private int find_data (WidgetData data) {
+        int result = -1;
+        int index;
+        WidgetData? dat = null;
+        var n_items = list.get_n_items ();
+        for (index = 0; index < n_items; index++) {
+            dat = lookup_index (index);
+            if (dat == null || dat.equal (data)) {
+                break;
+            }
+        }
+
+        if (dat.equal (data)) {
+            list.remove (index);
+            result = index;
+        }
+
+        return result;
     }
 }
 }

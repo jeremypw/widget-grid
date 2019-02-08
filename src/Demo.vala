@@ -38,7 +38,8 @@ public class DemoWindow : Gtk.ApplicationWindow {
     private GOF.Directory.Async dir;
 
     construct {
-        var view = new View (new DemoItemFactory ());
+        var view = new View (new DemoItemFactory (),
+                             new SimpleSortedListModel ());
         Gtk.IconTheme theme;
         GLib.File dirfile;
 

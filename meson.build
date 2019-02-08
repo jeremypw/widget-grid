@@ -19,6 +19,7 @@ lib = shared_library (
     'lib/ItemInterface.vala',
     'lib/ModelInterface.vala',
     'lib/SimpleModel.vala',
+    'lib/SimpleSortedListModel.vala',
 
     dependencies : [
         dependency ('gtk+-3.0'),

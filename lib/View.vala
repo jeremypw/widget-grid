@@ -369,9 +369,7 @@ public class View : Gtk.Grid {
 
         for (int c = 0; c < cols && data_index < n_items; c++) {
             var item = widget_pool[widget_index];
-warning ("get data index %i", data_index);
-            var data = model.lookup (data_index);
-warning ("iew got data");
+            var data = model.lookup_index (data_index);
             update_item_with_data (item, data);
 
             int min_h, nat_h, min_w, nat_w;
@@ -391,8 +389,7 @@ warning ("iew got data");
 
     private void update_item_with_data (Item item, WidgetData data) {
         if (item.data_id != data.data_id) {
-warning ("updating item");
-assert (data is WidgetData);
+            assert (data is WidgetData);
             item.update_item (data);
         }
 

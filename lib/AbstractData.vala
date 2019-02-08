@@ -18,9 +18,17 @@
 
 namespace WidgetGrid {
 
-public class WidgetData  {
+public class WidgetData : Object {
+    public static int compare_data_func (void* a, void* b) {
+        var data1 = (WidgetData)a;
+        var data2 = (WidgetData)b;
+
+        return data1.compare (data2);
+    }
+
     public int data_id;
     public virtual bool equal (WidgetData b) {return data_id == b.data_id;}
+    public virtual int compare (WidgetData b) {return 0;}
 }
 }
 
