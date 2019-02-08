@@ -33,7 +33,7 @@ public class View : Gtk.Grid {
     private const double ACCEL_RATE = 1.3;
 
     public Vala.ArrayList <Item> widget_pool;
-    public Vala.ArrayList <Data> data_list;
+    public Model<WidgetData>model {get; set; }
     public int n_items = 0;
     public int n_widgets = 0;
     public int pool_size = 0;
@@ -112,8 +112,7 @@ public class View : Gtk.Grid {
             row_offsets[i] = int.MAX;
         }
 
-        widget_pool = new Vala.ArrayList<Item> (Item.equal);
-        data_list = new Vala.ArrayList<Data> (Data.equal);
+        widget_pool = new Vala.ArrayList<Item> ();
 
         item_width_index = 3;
         column_width = item_width + hpadding + hpadding;
@@ -175,8 +174,10 @@ public class View : Gtk.Grid {
         show_all ();
     }
 
-    public View (AbstractItemFactory _factory) {
-        Object (factory: _factory);
+    public View (AbstractItemFactory _factory, Model<WidgetData>? _model = null) {
+        Object (factory: _factory,
+                model: _model != null ? _model : new SimpleModel ()
+        );
     }
 
     private bool on_key_press_event (Gdk.EventKey event) {
@@ -277,7 +278,7 @@ public class View : Gtk.Grid {
 
     private double total_delta_y = 0.0;
 
-    /* Adjustment steps in rows (not height) */
+    /*** Implement accelerating scrolling ***/
     private uint scroll_redraw_timeout_id = 0;
     private bool wait = false;
     private uint32 last_event_time = 0;
@@ -319,7 +320,8 @@ public class View : Gtk.Grid {
         first_displayed_row = (int)(new_val);
 
         if (up) {
-            offset = (new_val - (double)first_displayed_row) * (get_row_height (first_displayed_widget_index, first_displayed_data_index));
+            var row_height = (get_row_height (first_displayed_widget_index, first_displayed_data_index));
+            offset = (new_val - (double)first_displayed_row) * row_height;
         } else {
             offset = (new_val - (double)first_displayed_row) * first_displayed_row_height;
         }
@@ -330,18 +332,7 @@ public class View : Gtk.Grid {
 
     private uint reflow_timeout_id = 0;
     private bool block_reflow = true;
-
-    public void add_data (Data data) {
-        if (n_items < MAX_WIDGETS) {
-            widget_pool.add (factory.new_item ());
-            n_widgets++;
-        }
-
-        data.data_id = n_items;
-        data_list.add (data);
-        n_items++;
-
-
+    private void schedule_reflow () {
         if (reflow_timeout_id > 0) {
             block_reflow = true;
             return;
@@ -359,6 +350,18 @@ public class View : Gtk.Grid {
         }
     }
 
+    public void add_data (WidgetData data) {
+        if (n_items < MAX_WIDGETS) {
+            widget_pool.add (factory.new_item ());
+            n_widgets++;
+        }
+
+        data.data_id = n_items;
+        model.add (data);
+        n_items++;
+        schedule_reflow ();
+    }
+
 
     /** @index is the index of the last item on the previous row (or -1 for the first row) **/
     private int get_row_height (int widget_index, int data_index) { /* widgets previous updated */
@@ -366,8 +369,9 @@ public class View : Gtk.Grid {
 
         for (int c = 0; c < cols && data_index < n_items; c++) {
             var item = widget_pool[widget_index];
-            var data = data_list[data_index];
-
+warning ("get data index %i", data_index);
+            var data = model.lookup (data_index);
+warning ("iew got data");
             update_item_with_data (item, data);
 
             int min_h, nat_h, min_w, nat_w;
@@ -385,8 +389,10 @@ public class View : Gtk.Grid {
         return max_h + 2 * vpadding;
     }
 
-    private void update_item_with_data (Item item, Data data) {
+    private void update_item_with_data (Item item, WidgetData data) {
         if (item.data_id != data.data_id) {
+warning ("updating item");
+assert (data is WidgetData);
             item.update_item (data);
         }
 

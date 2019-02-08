@@ -17,6 +17,8 @@ lib = shared_library (
     'lib/AbstractItemFactory.vala',
     'lib/AbstractData.vala',
     'lib/ItemInterface.vala',
+    'lib/ModelInterface.vala',
+    'lib/SimpleModel.vala',
 
     dependencies : [
         dependency ('gtk+-3.0'),

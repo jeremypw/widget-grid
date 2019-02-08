@@ -18,21 +18,24 @@
 
 namespace WidgetGrid {
 
-public interface Item : Gtk.Widget {
-    public abstract bool is_selected { get; set; default = false; }
-    public abstract int data_id { get; set; default = -1; }
-    public abstract bool set_max_width (int width);
+[GenericAccessors]
+public class SimpleModel : Object, Model<WidgetData> {
+    private Vala.ArrayList<WidgetData> list;
 
-    private static int _max_height;
-    public static int max_height { get { return _max_height; } set { _max_height = value; } default = 256;}
-    private static int _min_height;
-    public static int min_height { get { return _min_height; } set { _min_height = value; } default = 16;}
+    construct {
+        list = new Vala.ArrayList<WidgetData> (WidgetData.equal);
+    }
 
-    public abstract void get_preferred_height_for_width (int width, out int min_height, out int nat_height);
-    public abstract void update_item (WidgetData data);
+    public void add (WidgetData data) {
+        list.add (data);
+    }
 
-    public virtual bool equal (Item b) {
-        return data_id == b.data_id;
+    public void remove (WidgetData data) {
+        list.remove (data);
+    }
+
+    public WidgetData lookup (int index) {
+        return list[index];
     }
 }
 }

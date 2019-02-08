@@ -43,7 +43,7 @@ public class DemoWindow : Gtk.ApplicationWindow {
         GLib.File dirfile;
 
         view.item_width = 64;
-        int n = 100;
+        int n = 1;
 
         /* This adds about 128 * n icon items to the view */
         for (int i = 0; i < n; i++) {

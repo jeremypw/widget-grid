@@ -115,14 +115,6 @@ public class DemoItemFactory : AbstractItemFactory {
             return true;
         }
 
-        public bool is_equal (Item b) {
-            if (b is DemoItem) {
-                return (( DemoItem) b).item_name == item_name;
-            } else {
-                return false;
-            }
-        }
-
         public bool set_max_width (int width) {
             if (width != set_max_width_request) {
                 get_new_pix (width - total_padding);
@@ -134,7 +126,7 @@ public class DemoItemFactory : AbstractItemFactory {
             return true;
         }
 
-        public void update_item (Data data) {
+        public void update_item (WidgetData data) {
             assert (data is DemoItemData);
             var demo_data = (DemoItemData)data;
 

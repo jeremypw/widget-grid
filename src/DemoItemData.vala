@@ -18,15 +18,11 @@
 
 namespace WidgetGrid {
 
-public class DemoItemData : Data {
+public class DemoItemData : WidgetData {
     public GOF.File file { get; set;}
 
     public DemoItemData (GOF.File _file) {
         file = _file;
-    }
-
-    public override bool is_equal (Data b) {
-        return file.location.equal (((DemoItemData)b).file.location);
     }
 }
 }
