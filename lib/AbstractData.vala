@@ -19,8 +19,12 @@
 namespace WidgetGrid {
 
 public abstract class Data {
+    public static bool equal (Data a, Data b) {
+        return a.is_equal (b);
+    }
+
     public int data_id { get; set; default = -1; }
-    public abstract bool equal (Data b);
+    public abstract bool is_equal (Data b);
 }
 }
 

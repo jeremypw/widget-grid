@@ -25,7 +25,7 @@ public class DemoItemData : Data {
         file = _file;
     }
 
-    public override bool equal (Data b) {
+    public override bool is_equal (Data b) {
         return file.location.equal (((DemoItemData)b).file.location);
     }
 }

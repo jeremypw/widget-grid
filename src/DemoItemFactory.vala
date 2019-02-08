@@ -115,7 +115,7 @@ public class DemoItemFactory : AbstractItemFactory {
             return true;
         }
 
-        public bool equal (Item b) {
+        public bool is_equal (Item b) {
             if (b is DemoItem) {
                 return (( DemoItem) b).item_name == item_name;
             } else {
