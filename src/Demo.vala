@@ -18,6 +18,11 @@
 
 namespace WidgetGrid {
 
+enum ViewType {
+    SIMPLE,
+    SIMPLE_SORTED
+}
+
 public class App : Gtk.Application {
     construct {
         application_id = "com.github.jeremypw.widget-grid-demo";
@@ -34,25 +39,36 @@ public class App : Gtk.Application {
 }
 
 public class DemoWindow : Gtk.ApplicationWindow {
-    public Gtk.Layout layout;
     private GOF.Directory.Async dir;
+    private TopMenu top_menu;
+    private View view;
 
     construct {
-        var view = new View (new DemoItemFactory (),
-                             new SimpleSortedListModel ());
-        Gtk.IconTheme theme;
-        GLib.File dirfile;
+        var app_menu = new AppMenu ();
 
+        app_menu.change_view.connect (change_view);
+
+        top_menu = new TopMenu (app_menu);
+
+        view = make_simple_view ();
         view.item_width = 64;
-        int n = 1;
+        populate_view (view);
 
+        set_titlebar (top_menu);
+        add (view);
+
+        set_default_size (800, 600);
+        resizable = true;
+
+        show_all ();
+    }
+
+    private void populate_view (View view) {
+        GLib.File dirfile;
+        int n = 1;
         /* This adds about 128 * n icon items to the view */
         for (int i = 0; i < n; i++) {
-            try {
-                dirfile = GLib.File.new_for_commandline_arg ("/usr/share/applications");
-            } catch (Error e) {
-                warning ("Did not load app dir - %s", e.message);
-            }
+            dirfile = GLib.File.new_for_commandline_arg ("/usr/share/applications");
 
             dir = GOF.Directory.Async.from_gfile (dirfile);
 
@@ -66,13 +82,95 @@ public class DemoWindow : Gtk.ApplicationWindow {
 
             dir.init ();
         }
+    }
 
+    private View make_simple_view () {
+        return new View (new DemoItemFactory (),
+                             new SimpleModel ());
+    }
+
+    private View make_simple_sorted_view () {
+        return new View (new DemoItemFactory (),
+                             new SimpleSortedListModel ());
+    }
+
+    private void change_view (ViewType type) {
+        var width = view.item_width;
+        view.destroy ();
+        var subtitle = "Simple Unsorted View";
+        switch (type) {
+            case ViewType.SIMPLE_SORTED:
+                view = make_simple_sorted_view ();
+                subtitle = "Simple Sorted View";
+                break;
+
+            default:
+                view = make_simple_view ();
+                break;
+        }
+
+        view.item_width = width;
+        populate_view (view);
+        view.show_all ();
         add (view);
 
-        set_default_size (800, 600);
-        resizable = true;
+        top_menu.set_title ("WidgetGrid Demo");
+        top_menu.set_subtitle (subtitle);
+    }
 
-        show_all ();
+    private class TopMenu : Gtk.HeaderBar {
+        public Gtk.MenuButton menu { get; construct; }
+
+        construct {
+            pack_end (menu);
+        }
+
+        public TopMenu (AppMenu menu) {
+            Object (menu: menu,
+                    show_close_button: true);
+        }
+    }
+
+    private class AppMenu : Gtk.MenuButton {
+        public signal void change_view (ViewType type);
+
+        construct {
+            var popover = new Gtk.Popover (this);
+            var listbox = new Gtk.ListBox ();
+            var simple_button = new Gtk.Button.with_label ("Simple Unsorted View");
+            simple_button.xalign = 0.0f;
+            simple_button.clicked.connect (() => {
+                handle_button (ViewType.SIMPLE);
+            });
+
+            listbox.add (simple_button);
+
+            var simple_sorted_button = new Gtk.Button.with_label ("Simple Sorted View");
+            simple_sorted_button.xalign = 0.0f;
+            simple_sorted_button.clicked.connect (() => {
+                handle_button (ViewType.SIMPLE_SORTED);
+            });
+
+            listbox.add (simple_sorted_button);
+
+            popover.add (listbox);
+            popover.show_all ();
+            popover.hide ();
+
+            set_popover (popover);
+        }
+
+        public AppMenu () {
+            Object (
+                image: new Gtk.Image.from_icon_name ("open-menu", Gtk.IconSize.LARGE_TOOLBAR),
+                tooltip_text: "Options"
+            );
+        }
+
+        private void handle_button (ViewType type) {
+            popover.hide ();
+            change_view (type);
+        }
     }
 }
 }
