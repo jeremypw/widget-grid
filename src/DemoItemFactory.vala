@@ -19,12 +19,8 @@
 namespace WidgetGrid {
 
 public class DemoItemFactory : AbstractItemFactory {
-    private static int widget_id = 0;
-
     public override Item new_item () {
-        var w = new DemoItem (null);
-        w.id = widget_id++;
-        return w;
+        return new DemoItem ();
     }
 
     protected class DemoItem : Gtk.EventBox, Item {
@@ -38,23 +34,36 @@ public class DemoItemFactory : AbstractItemFactory {
         private int set_max_width_request = 0;
         private int total_padding;
 
-        public int id { get; set; default = -1;}
+        public WidgetData? data { get; set; default = null; }
+
+        private DemoItemData? demo_data {
+            get {
+                return data != null ? (DemoItemData)data : null;
+            }
+        }
 
         public Gdk.Pixbuf? pix {
             get {
-                return file != null ? file.pix : null;
+                return data != null ? file.pix : null;
             }
         }
 
         public string item_name {
             get {
-                return file != null ? file.get_display_name () : "";
+                return data != null ? file.get_display_name () : "";
             }
         }
 
-        public bool is_selected { get; set; default = false; }
-        public int data_id { get; set; default = -1; }
-        public GOF.File? file { get; set; default = null; }
+        public int data_id {
+            get {
+                return data != null ? data.data_id : -1;
+            }
+        }
+        public GOF.File? file {
+            get {
+                return data != null ? demo_data.file : null;
+            }
+        }
 
         construct {
             var frame = new Gtk.Frame (null);
@@ -88,16 +97,9 @@ public class DemoItemFactory : AbstractItemFactory {
 
             add (frame);
 
-            button_press_event.connect (() => {
-                warning ("button press %s", item_name);
-            return false;
-            });
+            button_press_event.connect (on_button_press);
 
             show_all ();
-        }
-
-        public DemoItem (GOF.File? file) {
-            Object (file: file);
         }
 
         public bool get_new_pix (int size) {
@@ -128,12 +130,37 @@ public class DemoItemFactory : AbstractItemFactory {
 
         public void update_item (WidgetData data) {
             assert (data is DemoItemData);
-            var demo_data = (DemoItemData)data;
+            this.data = data;
 
-            file = demo_data.file;
-            data_id = data.data_id;
             label.label = item_name;
-            set_max_width_request = 0;
+            set_max_width_request = 0; /* Ensure pix will be updated when next used */
+        }
+
+        private void toggle_selected () {
+            is_selected = !is_selected;
+            data.is_selected = is_selected;
+            var flags = is_selected ? Gtk.StateFlags.SELECTED : Gtk.StateFlags.NORMAL;
+
+            set_state_flags (flags, true);
+        }
+
+        private bool on_button_press (Gdk.EventButton event) {
+            switch (event.button) {
+                case Gdk.BUTTON_PRIMARY:
+                    toggle_selected ();
+                    return true;
+
+                case Gdk.BUTTON_SECONDARY:
+                    show_properties ();
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        private void show_properties () {
+
         }
     }
 }

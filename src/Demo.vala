@@ -205,7 +205,6 @@ public class DemoWindow : Gtk.ApplicationWindow {
 
         private Gtk.Button make_viewtype_button (string label, ViewType type) {
             var button = new Gtk.Button.with_label (label);
-            button.xalign = 0.0f;
             button.clicked.connect (() => {
                 handle_button (type);
             });

@@ -19,8 +19,7 @@
 namespace WidgetGrid {
 
 public interface Item : Gtk.Widget {
-    public abstract bool is_selected { get; set; default = false; }
-    public abstract int data_id { get; set; default = -1; }
+    public abstract WidgetData? data { get; set; default = null; }
     public abstract bool set_max_width (int width);
 
     private static int _max_height;
@@ -32,7 +31,29 @@ public interface Item : Gtk.Widget {
     public abstract void update_item (WidgetData data);
 
     public virtual bool equal (Item b) {
-        return data_id == b.data_id;
+        if (data != null && b.data != null) {
+            return data.equal (b.data);
+        } else {
+            return false;
+        }
+    }
+
+    public bool is_selected {
+        get {
+            return data != null ? data.is_selected : false;
+        }
+
+        set {
+            if (data != null) {
+                data.is_selected = value;
+            }
+        }
+    }
+
+    public int data_id {
+        get {
+            return data != null ? data.data_id : -1;
+        }
     }
 }
 }

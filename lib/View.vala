@@ -389,7 +389,6 @@ public class View : Gtk.Grid {
 
     private void update_item_with_data (Item item, WidgetData data) {
         if (item.data_id != data.data_id) {
-            assert (data is WidgetData);
             item.update_item (data);
         }
 

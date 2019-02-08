@@ -29,8 +29,12 @@ public class SimpleSortableListModel : Object, Model<WidgetData> {
         return list.add (data);
     }
 
-    public bool sort (CompareDataFunc? func) {
-        list.sort (func);
+    public bool sort (CompareDataFunc func) {
+        /* Use closure just to avoid warning re copying delegates */
+        list.sort ((a, b) => {
+            return func (a, b);
+        });
+
         return true;
     }
 

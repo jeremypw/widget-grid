@@ -27,6 +27,7 @@ public class WidgetData : Object {
     }
 
     public int data_id;
+    public bool is_selected { get; set; default = false; }
     public virtual bool equal (WidgetData b) {return data_id == b.data_id;}
     public virtual int compare (WidgetData b) {return 0;}
 }

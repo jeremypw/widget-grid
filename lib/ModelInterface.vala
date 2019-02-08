@@ -39,7 +39,7 @@ public interface Model<G> : Object {
     public abstract G lookup_index (int index);
     public abstract int lookup_data (G data);
 
-    public virtual bool sort (CompareDataFunc? func) {
+    public virtual bool sort (CompareDataFunc func) {
         return false;
     }
 }
