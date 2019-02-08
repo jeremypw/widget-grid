@@ -20,7 +20,11 @@ namespace WidgetGrid {
 
 enum ViewType {
     SIMPLE,
-    SIMPLE_SORTED
+    SIMPLE_LARGE_MODEL,
+    SIMPLE_VERY_LARGE_MODEL,
+    SIMPLE_SORTED,
+    SORTED_LARGE_MODEL,
+    SORTED_VERY_LARGE_MODEL
 }
 
 public class App : Gtk.Application {
@@ -39,48 +43,54 @@ public class App : Gtk.Application {
 }
 
 public class DemoWindow : Gtk.ApplicationWindow {
-    private GOF.Directory.Async dir;
     private TopMenu top_menu;
     private View view;
+    GOF.Directory.Async dir;
 
     construct {
         var app_menu = new AppMenu ();
-
-        app_menu.change_view.connect (change_view);
-
         top_menu = new TopMenu (app_menu);
-
-        view = make_simple_view ();
-        view.item_width = 64;
-        populate_view (view);
-
         set_titlebar (top_menu);
-        add (view);
-
         set_default_size (800, 600);
         resizable = true;
 
+        change_view (ViewType.SIMPLE);
+
         show_all ();
+
+        app_menu.change_view.connect (change_view);
+
     }
 
-    private void populate_view (View view) {
+    private void populate_view (View view, int copies) {
         GLib.File dirfile;
-        int n = 1;
         /* This adds about 128 * n icon items to the view */
-        for (int i = 0; i < n; i++) {
-            dirfile = GLib.File.new_for_commandline_arg ("/usr/share/applications");
+        dirfile = GLib.File.new_for_commandline_arg ("/usr/share/applications");
+        dir = GOF.Directory.Async.from_gfile (dirfile);
+        n_copies = copies;
+        dir.done_loading.connect (on_done_loading);
+        dir.file_loaded.connect (on_file_loaded);
+        dir.init ();
+    }
 
-            dir = GOF.Directory.Async.from_gfile (dirfile);
+    private void on_file_loaded (GOF.File file) {
+        file.update_icon (view.item_width, 1);
+        var data = new DemoItemData (file);
+        view.add_data (data);
+    }
 
-            dir.file_loaded.connect ((file) => {
-                file.update_icon (view.item_width, 1);
-                var data = new DemoItemData (file);
-                view.add_data (data);
-
-            });
-
-
+    private int load_count = 0;
+    private int n_copies = 1;
+    private void on_done_loading () {
+        load_count++;
+        if (load_count < n_copies) {
             dir.init ();
+            return;
+        } else {
+            view.sort ((CompareDataFunc?)(WidgetData.compare_data_func));
+            top_menu.subtitle = top_menu.subtitle + " - %i items".printf (view.n_items);
+            dir.done_loading.disconnect (on_done_loading);
+            dir.file_loaded.disconnect (on_file_loaded);
         }
     }
 
@@ -91,17 +101,46 @@ public class DemoWindow : Gtk.ApplicationWindow {
 
     private View make_simple_sorted_view () {
         return new View (new DemoItemFactory (),
-                             new SimpleSortedListModel ());
+                             new SimpleSortableListModel ());
     }
 
     private void change_view (ViewType type) {
-        var width = view.item_width;
-        view.destroy ();
+        int width;
+
+        if (view != null) {
+            width = view.item_width;
+            remove (view);
+            view.destroy ();
+        } else {
+            width = 64;
+        }
+
         var subtitle = "Simple Unsorted View";
+        int copies = 1;
         switch (type) {
             case ViewType.SIMPLE_SORTED:
                 view = make_simple_sorted_view ();
                 subtitle = "Simple Sorted View";
+                break;
+            case ViewType.SIMPLE_LARGE_MODEL:
+                view = make_simple_view ();
+                subtitle = "Simple Unsorted View with 10,000 items";
+                copies = 100;
+                break;
+            case ViewType.SIMPLE_VERY_LARGE_MODEL:
+                view = make_simple_view ();
+                subtitle = "Simple Unsorted View with 100,000 items";
+                copies = 1000;
+                break;
+            case ViewType.SORTED_LARGE_MODEL:
+                view = make_simple_sorted_view ();
+                subtitle = "Simple Sorted View with 10,000 items";
+                copies = 100;
+                break;
+            case ViewType.SORTED_VERY_LARGE_MODEL:
+                view = make_simple_sorted_view ();
+                subtitle = "Simple Sorted View with 100,000 items";
+                copies = 1000;
                 break;
 
             default:
@@ -109,13 +148,13 @@ public class DemoWindow : Gtk.ApplicationWindow {
                 break;
         }
 
-        view.item_width = width;
-        populate_view (view);
-        view.show_all ();
-        add (view);
-
         top_menu.set_title ("WidgetGrid Demo");
         top_menu.set_subtitle (subtitle);
+
+        view.item_width = width;
+        populate_view (view, copies);
+        view.show_all ();
+        add (view);
     }
 
     private class TopMenu : Gtk.HeaderBar {
@@ -152,6 +191,38 @@ public class DemoWindow : Gtk.ApplicationWindow {
             });
 
             listbox.add (simple_sorted_button);
+
+            var simple_unsorted_large_button = new Gtk.Button.with_label ("Large Unsorted Model");
+            simple_unsorted_large_button.xalign = 0.0f;
+            simple_unsorted_large_button.clicked.connect (() => {
+                handle_button (ViewType.SIMPLE_LARGE_MODEL);
+            });
+
+            listbox.add (simple_unsorted_large_button);
+
+            var simple_unsorted_very_large_button = new Gtk.Button.with_label ("Very Large Unsorted Model");
+            simple_unsorted_very_large_button.xalign = 0.0f;
+            simple_unsorted_very_large_button.clicked.connect (() => {
+                handle_button (ViewType.SIMPLE_VERY_LARGE_MODEL);
+            });
+
+            listbox.add (simple_unsorted_large_button);
+
+            var simple_sorted_large_button = new Gtk.Button.with_label ("Large Sorted Model");
+            simple_sorted_large_button.xalign = 0.0f;
+            simple_sorted_large_button.clicked.connect (() => {
+                handle_button (ViewType.SORTED_LARGE_MODEL);
+            });
+
+            listbox.add (simple_sorted_large_button);
+
+            var simple_sorted_very_large_button = new Gtk.Button.with_label ("Very Large Sorted Model");
+            simple_sorted_very_large_button.xalign = 0.0f;
+            simple_sorted_very_large_button.clicked.connect (() => {
+                handle_button (ViewType.SORTED_VERY_LARGE_MODEL);
+            });
+
+            listbox.add (simple_sorted_very_large_button);
 
             popover.add (listbox);
             popover.show_all ();

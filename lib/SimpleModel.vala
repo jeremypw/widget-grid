@@ -34,8 +34,8 @@ public class SimpleModel : Object, Model<WidgetData> {
         return list.remove (data);
     }
 
-    public void remove_index (int index) {
-        list.remove_at (index);
+    public bool remove_index (int index) {
+        return list.remove_at (index) != null;
     }
 
     public WidgetData lookup_index (int index) {

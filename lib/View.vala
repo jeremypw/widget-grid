@@ -523,5 +523,10 @@ public class View : Gtk.Grid {
 
         return widget_index;
     }
+
+    public void sort (CompareDataFunc? func) {
+        model.sort (func);
+        queue_draw ();
+    }
 }
 }

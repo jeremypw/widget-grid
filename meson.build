@@ -19,7 +19,6 @@ lib = shared_library (
     'lib/ItemInterface.vala',
     'lib/ModelInterface.vala',
     'lib/SimpleModel.vala',
-    'lib/SimpleSortedListModel.vala',
 
     dependencies : [
         dependency ('gtk+-3.0'),
@@ -48,10 +47,12 @@ executable (
     'src/Demo.vala',
     'src/DemoItemData.vala',
     'src/DemoItemFactory.vala',
+    'src/SimpleSortedListModel.vala',
 
     dependencies : [
         dependency ('gtk+-3.0'),
         dependency ('granite'),
+        dependency('gee-0.8'),
         libvala_dep,
         dependency ('pantheon-files-core')
     ],
