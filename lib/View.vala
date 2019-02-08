@@ -22,9 +22,6 @@ public class View : Gtk.Grid {
     private const int MIN_ITEM_WIDTH = 32;
     private const int MAX_ITEM_WIDTH = 512;
     private const int MAX_WIDGETS = 1000;
-
-    private Gtk.Layout layout;
-    private Gtk.Adjustment vadjustment;
     private double SCROLL_SENSITIVITY = 0.5;
     private const double ZOOM_SENSITIVITY = 0.5;
     private const int SCROLL_REDRAW_DELAY_MSEC = 100;
@@ -32,28 +29,35 @@ public class View : Gtk.Grid {
     private const double MAX_ACCEL = 128.0;
     private const double ACCEL_RATE = 1.3;
 
-    public Vala.ArrayList <Item> widget_pool;
-    public Model<WidgetData>model {get; set; }
-    public int n_items = 0;
-    public int n_widgets = 0;
-    public int pool_size = 0;
-    private int first_displayed_data_index = 0;
-    private int first_displayed_widget_index = 0;
-    private int last_displayed_data_index = 0;
-    private int highest_displayed_widget_index = 0;
-    private int first_displayed_row_height = 0;
-    private double last_adjustment_val = 0.0;
+    private int n_widgets = 0;
+    private int pool_size = 0;
 
-    private double offset = 0.0;
+    private int previous_first_displayed_data_index = 0;
+    private int previous_first_displayed_row_height = 0;
+
+    private int first_displayed_widget_index = 0;
+    private int highest_displayed_widget_index = 0;
+
+    private double previous_adjustment_val = 0.0;
+
     private int cols = 0;
     private int total_rows = 0;
-    public int column_width { get; private set; }
-    private int[] row_offsets;
 
+    private Gtk.Layout layout;
+    private Gtk.Adjustment vadjustment;
+
+    public Vala.ArrayList <Item> widget_pool;
+    public Model<WidgetData>model {get; set; }
+    public AbstractItemFactory factory { get; construct; }
+
+    public int n_items { get; private set; }
+    public int column_width { get; private set; }
     public int[] allowed_item_widths = {16, 24, 32, 48, 64, 96, 128, 256, 512};
     public int width_increment { get; set; default = 6; }
     public int minimum_item_width { get; set; default = MIN_ITEM_WIDTH; }
     public int maximum_item_width { get; set; default = MAX_ITEM_WIDTH; }
+    public int item_width_index { get; private set; }
+    public bool force_item_width { get; set; default = false; }
     public bool fixed_item_widths = true;
 
     private int _item_width = MIN_ITEM_WIDTH;
@@ -82,16 +86,20 @@ public class View : Gtk.Grid {
         }
     }
 
-    public int item_width_index { get; private set; }
-    public bool force_item_width { get; set; default = false; }
     public int hpadding { get; set; default = 6; }
     public int vpadding { get; set; default = 6; }
-
-    public AbstractItemFactory factory { get; construct; }
 
     public signal void selection_changed ();
 
     construct {
+        hexpand = true;
+        vexpand = true;
+        orientation = Gtk.Orientation.HORIZONTAL;
+        item_width_index = 3;
+        column_width = item_width + hpadding + hpadding;
+
+        widget_pool = new Vala.ArrayList<Item> ();
+
         vadjustment = new Gtk.Adjustment (0.0, 0.0, 10.0, 1.0, 1.0, 1.0);
         var scrollbar = new Gtk.Scrollbar (Gtk.Orientation.VERTICAL, vadjustment);
         scrollbar.set_slider_size_fixed (true);
@@ -99,21 +107,10 @@ public class View : Gtk.Grid {
         layout = new Gtk.Layout ();
         layout.hexpand = true;
         layout.vexpand = true;
-        hexpand = true;
-        vexpand = true;
-        orientation = Gtk.Orientation.HORIZONTAL;
+        layout.can_focus = true;
+
         add (layout);
         add (scrollbar);
-
-        row_offsets = new int[100];
-        for (int i = 0; i < 100; i++) {
-            row_offsets[i] = int.MAX;
-        }
-
-        widget_pool = new Vala.ArrayList<Item> ();
-
-        item_width_index = 3;
-        column_width = item_width + hpadding + hpadding;
 
         notify["hpadding"].connect (() => {
             column_width = item_width + hpadding + hpadding;
@@ -147,8 +144,6 @@ public class View : Gtk.Grid {
                 return handle_zoom (event);
             }
         });
-
-        layout.can_focus = true;
 
         layout.key_press_event.connect (on_key_press_event);
 
@@ -286,11 +281,8 @@ public class View : Gtk.Grid {
             accel += (ACCEL_RATE / 300 * (300 - rate));
         }
 
-        do_scroll_redraw ();
-
         if (scroll_redraw_timeout_id > 0) {
             wait = true;
-            return;
         } else {
             wait = false;
             scroll_redraw_timeout_id = Timeout.add (SCROLL_REDRAW_DELAY_MSEC, () => {
@@ -305,22 +297,26 @@ public class View : Gtk.Grid {
                 }
             });
         }
+
+        do_scroll_redraw ();
     }
 
     private void do_scroll_redraw () {
-       var new_val = vadjustment.get_value ();
-        bool up = new_val < last_adjustment_val;
+        var new_val = vadjustment.get_value ();
         var first_displayed_row = (int)(new_val);
+        double offset = 0.0;
+        var row_fraction = new_val - (double)first_displayed_row;
 
-        if (up) {
-            var row_height = (get_row_height (first_displayed_widget_index, first_displayed_data_index));
-            offset = (new_val - (double)first_displayed_row) * row_height;
+        if (new_val < previous_adjustment_val) { /* Scroll up */
+            var first_displayed_data_index = first_displayed_row * cols;
+            var row_height = get_row_height (first_displayed_widget_index, first_displayed_data_index);
+            offset = row_fraction * row_height;
         } else {
-            offset = (new_val - (double)first_displayed_row) * first_displayed_row_height;
+            offset = row_fraction * previous_first_displayed_row_height;
         }
 
-        Idle.add (() => {position_items (first_displayed_row); return false;});
-        last_adjustment_val = new_val;
+        Idle.add (() => {position_items (first_displayed_row, offset); return false;});
+        previous_adjustment_val = new_val;
     }
 
     private uint reflow_timeout_id = 0;
@@ -388,10 +384,11 @@ public class View : Gtk.Grid {
         item.set_max_width (item_width);
     }
 
-    private void position_items (int first_displayed_row) {
-        int data_index, widget_index, row_height;
+    private void position_items (int first_displayed_row, double offset) {
+        int data_index, widget_index, row_height, last_displayed_data_index, first_displayed_data_index;
 
         data_index = first_displayed_row * cols;
+
         if (n_items == 0 || data_index >= n_items)  {
             return;
         } else if (data_index < 0) {
@@ -399,17 +396,17 @@ public class View : Gtk.Grid {
             offset = 0;
         }
 
-        if (first_displayed_data_index != data_index) {
+        if (previous_first_displayed_data_index != data_index) {
             clear_layout ();
-            first_displayed_data_index = data_index;
-            first_displayed_widget_index = first_displayed_data_index % (highest_displayed_widget_index + 1);
-            last_displayed_data_index = first_displayed_data_index;
+            previous_first_displayed_data_index = data_index;
+            first_displayed_widget_index = data_index % (highest_displayed_widget_index + 1);
         }
 
-        first_displayed_row_height = get_row_height (first_displayed_widget_index, first_displayed_data_index);
-        row_height = first_displayed_row_height;
+        first_displayed_data_index = data_index;
+        last_displayed_data_index = data_index;
+        row_height = get_row_height (first_displayed_widget_index, data_index);
+        previous_first_displayed_row_height = row_height;
         widget_index = first_displayed_widget_index;
-        data_index = first_displayed_data_index;
 
         int y = 0 - (int)offset;
         for (int r = 0; y < layout.get_allocated_height () && data_index < n_items; r++) {
@@ -433,7 +430,6 @@ public class View : Gtk.Grid {
                 data_index++;
             }
 
-            row_offsets[r] = y;
             y += row_height;
             row_height = get_row_height (widget_index, data_index);
         }
@@ -462,11 +458,9 @@ public class View : Gtk.Grid {
 
             total_rows = new_total_rows;
 
-            var first_displayed_row = first_displayed_data_index / cols;
+            var first_displayed_row = previous_first_displayed_data_index / cols;
 
             highest_displayed_widget_index = 0;
-            last_displayed_data_index = 0;
-            offset = 0.0;
             pool_size = 0;
 
             var val = first_displayed_row;
