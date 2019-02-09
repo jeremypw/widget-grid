@@ -14,6 +14,7 @@ dependency('gtk+-3.0', version: '>=3.22', required: true)
 lib = shared_library (
     libname,
     'lib/View.vala',
+    'lib/LayoutHandler.vala',
     'lib/AbstractItemFactory.vala',
     'lib/AbstractData.vala',
     'lib/ItemInterface.vala',

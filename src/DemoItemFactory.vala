@@ -77,12 +77,12 @@ public class DemoItemFactory : AbstractItemFactory {
             grid.valign = Gtk.Align.CENTER;
 
             image = new Gtk.Image.from_pixbuf (pix);
-            image.margin = 6;
+            image.margin = 2;
             total_padding += image.margin * 2;
 
             label = new Gtk.Label (item_name);
             label.halign = Gtk.Align.CENTER;
-            label.margin = 6;
+            label.margin = 2;
             total_padding += label.margin * 2;
             label.set_line_wrap (true);
             label.set_line_wrap_mode (Pango.WrapMode.WORD_CHAR);

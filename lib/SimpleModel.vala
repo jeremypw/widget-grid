@@ -27,15 +27,30 @@ public class SimpleModel : Object, Model<WidgetData> {
     }
 
     public bool add (WidgetData data) {
-        return list.add (data);
+        var res = list.add (data);
+        if (res) {
+            n_items_changed (1);
+        }
+
+        return res;
     }
 
     public bool remove_data (WidgetData data) {
-        return list.remove (data);
+        var res = list.remove (data);
+        if (res) {
+            n_items_changed (-1);
+        }
+
+        return res;
     }
 
     public bool remove_index (int index) {
-        return list.remove_at (index) != null;
+        var res = list.remove_at (index) != null;
+        if (res) {
+            n_items_changed (-1);
+        }
+
+        return res;
     }
 
     public WidgetData lookup_index (int index) {
@@ -44,6 +59,10 @@ public class SimpleModel : Object, Model<WidgetData> {
 
     public int lookup_data (WidgetData data) {
         return list.index_of (data);
+    }
+
+    public int get_n_items () {
+        return list.size;
     }
 }
 }

@@ -45,6 +45,7 @@ public class App : Gtk.Application {
 public class DemoWindow : Gtk.ApplicationWindow {
     private TopMenu top_menu;
     private View view;
+    private Model model;
     GOF.Directory.Async dir;
 
     construct {
@@ -55,7 +56,6 @@ public class DemoWindow : Gtk.ApplicationWindow {
         resizable = true;
 
         change_view (ViewType.SIMPLE);
-
         show_all ();
 
         app_menu.change_view.connect (change_view);
@@ -88,20 +88,20 @@ public class DemoWindow : Gtk.ApplicationWindow {
             return;
         } else {
             view.sort ((CompareDataFunc?)(WidgetData.compare_data_func));
-            top_menu.subtitle = top_menu.subtitle + " - %i items".printf (view.n_items);
+            top_menu.subtitle = top_menu.subtitle + " - %i items".printf (model.get_n_items ());
             dir.done_loading.disconnect (on_done_loading);
             dir.file_loaded.disconnect (on_file_loaded);
         }
     }
 
     private View make_simple_view () {
-        return new View (new DemoItemFactory (),
-                             new SimpleModel ());
+        model = new SimpleModel ();
+        return new View (new DemoItemFactory (), model);
     }
 
     private View make_simple_sorted_view () {
-        return new View (new DemoItemFactory (),
-                             new SimpleSortableListModel ());
+        model = new SimpleSortableListModel ();
+        return new View (new DemoItemFactory (), model);
     }
 
     private void change_view (ViewType type) {

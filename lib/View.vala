@@ -16,48 +16,33 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
+/*** WidgetGrid.View handles layout and scrollbar, adding items to and sorting the model, and reacting to some user input.
+   * The details of laying out the widgets in a grid, scrolling and zooming them is passed off to the WidgetGrid.LayoutHandler
+***/
 namespace WidgetGrid {
 
 public class View : Gtk.Grid {
+    private static int total_items_added = 0; /* Used to ID data; only ever increases */
     private const int MIN_ITEM_WIDTH = 32;
     private const int MAX_ITEM_WIDTH = 512;
-    private const int MAX_WIDGETS = 1000;
-    private double SCROLL_SENSITIVITY = 0.5;
-    private const double ZOOM_SENSITIVITY = 0.5;
-    private const int SCROLL_REDRAW_DELAY_MSEC = 100;
-    private double accel = 1.0;
-    private const double MAX_ACCEL = 128.0;
-    private const double ACCEL_RATE = 1.3;
 
-    private int n_widgets = 0;
-    private int pool_size = 0;
+    private double SCROLL_SENSITIVITY = 0.5; /* The scroll delta required to move the grid position by one step */
+    private const double ZOOM_SENSITIVITY = 1.0; /* The scroll delta required to change the item width by one step */
 
-    private int previous_first_displayed_data_index = 0;
-    private int previous_first_displayed_row_height = 0;
-
-    private int first_displayed_widget_index = 0;
-    private int highest_displayed_widget_index = 0;
-
-    private double previous_adjustment_val = 0.0;
-
-    private int cols = 0;
-    private int total_rows = 0;
 
     private Gtk.Layout layout;
-    private Gtk.Adjustment vadjustment;
+    private LayoutHandler layout_handler;
 
-    public Vala.ArrayList <Item> widget_pool;
-    public Model<WidgetData>model {get; set; }
+    public Vala.ArrayList<Item> widget_pool;
+    public Model<WidgetData>model {get; set construct; }
     public AbstractItemFactory factory { get; construct; }
 
-    public int n_items { get; private set; }
-    public int column_width { get; private set; }
+
     public int[] allowed_item_widths = {16, 24, 32, 48, 64, 96, 128, 256, 512};
     public int width_increment { get; set; default = 6; }
     public int minimum_item_width { get; set; default = MIN_ITEM_WIDTH; }
     public int maximum_item_width { get; set; default = MAX_ITEM_WIDTH; }
     public int item_width_index { get; private set; }
-    public bool force_item_width { get; set; default = false; }
     public bool fixed_item_widths = true;
 
     private int _item_width = MIN_ITEM_WIDTH;
@@ -96,49 +81,35 @@ public class View : Gtk.Grid {
         vexpand = true;
         orientation = Gtk.Orientation.HORIZONTAL;
         item_width_index = 3;
-        column_width = item_width + hpadding + hpadding;
-
-        widget_pool = new Vala.ArrayList<Item> ();
-
-        vadjustment = new Gtk.Adjustment (0.0, 0.0, 10.0, 1.0, 1.0, 1.0);
-        var scrollbar = new Gtk.Scrollbar (Gtk.Orientation.VERTICAL, vadjustment);
-        scrollbar.set_slider_size_fixed (true);
 
         layout = new Gtk.Layout ();
         layout.hexpand = true;
         layout.vexpand = true;
         layout.can_focus = true;
 
+        layout_handler = new LayoutHandler (layout, factory, model);
+
+        bind_property ("item-width", layout_handler, "item-width", BindingFlags.DEFAULT);
+        bind_property ("hpadding", layout_handler, "hpadding", BindingFlags.DEFAULT);
+        bind_property ("vpadding", layout_handler, "vpadding", BindingFlags.DEFAULT);
+
+        var scrollbar = new Gtk.Scrollbar (Gtk.Orientation.VERTICAL, layout_handler.vadjustment);
+        scrollbar.set_slider_size_fixed (true);
+
         add (layout);
         add (scrollbar);
 
-        notify["hpadding"].connect (() => {
-            column_width = item_width + hpadding + hpadding;
+        size_allocate.connect (() => {
+            layout_handler.configure ();
         });
 
-        notify["vpadding"].connect (() => {
-            reflow ();
-        });
+        layout.add_events (Gdk.EventMask.SCROLL_MASK |
+                           Gdk.EventMask.SMOOTH_SCROLL_MASK |
+                           Gdk.EventMask.POINTER_MOTION_MASK
+        );
 
-        notify["column-width"].connect (() => {
-            reflow ();
-        });
-
-        notify["item-width"].connect (() => {
-            column_width = item_width + hpadding + hpadding;
-        });
-
-        vadjustment.value_changed.connect (on_adjustment_value_changed);
-
-        size_allocate.connect ((alloc) => {
-            reflow (alloc);
-        });
-
-        layout.add_events (Gdk.EventMask.SCROLL_MASK | Gdk.EventMask.SMOOTH_SCROLL_MASK | Gdk.EventMask.POINTER_MOTION_MASK);
         layout.scroll_event.connect ((event) => {
-            var control_pressed = (event.state & Gdk.ModifierType.CONTROL_MASK) != 0;
-
-            if (!control_pressed) {
+            if ((event.state & Gdk.ModifierType.CONTROL_MASK) == 0) { /* Control key not pressed */
                 return handle_scroll (event);
             } else {
                 return handle_zoom (event);
@@ -148,14 +119,7 @@ public class View : Gtk.Grid {
         layout.key_press_event.connect (on_key_press_event);
 
         layout.delete_event.connect (() => {
-            if (scroll_redraw_timeout_id > 0) {
-                Source.remove (scroll_redraw_timeout_id);
-            }
-
-            if (reflow_timeout_id > 0) {
-                Source.remove (reflow_timeout_id);
-            }
-
+            layout_handler.close ();
             return false;
         });
 
@@ -166,6 +130,17 @@ public class View : Gtk.Grid {
         Object (factory: _factory,
                 model: _model != null ? _model : new SimpleModel ()
         );
+    }
+
+    public void add_data (WidgetData data) {
+        data.data_id = View.total_items_added;
+        model.add (data);
+        View.total_items_added++;
+    }
+
+    public void sort (CompareDataFunc? func) {
+        model.sort (func);
+        queue_draw ();
     }
 
     private bool on_key_press_event (Gdk.EventKey event) {
@@ -189,6 +164,7 @@ public class View : Gtk.Grid {
         return false;
     }
 
+    private double total_delta_y = 0.0;
     private bool handle_scroll (Gdk.EventScroll event) {
         switch (event.direction) {
             case Gdk.ScrollDirection.SMOOTH:
@@ -200,10 +176,10 @@ public class View : Gtk.Grid {
 
                 if (total_delta_y >= SCROLL_SENSITIVITY) {
                     total_delta_y = 0.0;
-                    vadjustment.set_value (vadjustment.get_value () + vadjustment.get_step_increment () * accel);
+                    layout_handler.scroll_steps (1);
                 } else if (total_delta_y <= -SCROLL_SENSITIVITY) {
                     total_delta_y = 0.0;
-                    vadjustment.set_value (vadjustment.get_value () - vadjustment.get_step_increment () * accel);
+                    layout_handler.scroll_steps (-1);
                 }
 
                 return true;
@@ -262,249 +238,6 @@ public class View : Gtk.Grid {
         } else {
             item_width -= width_increment;
         }
-    }
-
-    private double total_delta_y = 0.0;
-
-    /*** Implement accelerating scrolling ***/
-    private uint scroll_redraw_timeout_id = 0;
-    private bool wait = false;
-    private uint32 last_event_time = 0;
-    private void on_adjustment_value_changed () {
-        var now = Gtk.get_current_event_time ();
-        uint32 rate = now - last_event_time;  /* min about 24, typical 50 - 150 */
-        last_event_time = now;
-
-        if (rate > 300) {
-            accel = 1.0;
-        } else {
-            accel += (ACCEL_RATE / 300 * (300 - rate));
-        }
-
-        if (scroll_redraw_timeout_id > 0) {
-            wait = true;
-        } else {
-            wait = false;
-            scroll_redraw_timeout_id = Timeout.add (SCROLL_REDRAW_DELAY_MSEC, () => {
-                if (wait) {
-                    wait = false;
-                    accel /= ACCEL_RATE;
-                    return Source.CONTINUE;
-                } else {
-                    scroll_redraw_timeout_id = 0;
-                    accel = 1.0;
-                    return Source.REMOVE;
-                }
-            });
-        }
-
-        do_scroll_redraw ();
-    }
-
-    private void do_scroll_redraw () {
-        var new_val = vadjustment.get_value ();
-        var first_displayed_row = (int)(new_val);
-        double offset = 0.0;
-        var row_fraction = new_val - (double)first_displayed_row;
-
-        if (new_val < previous_adjustment_val) { /* Scroll up */
-            var first_displayed_data_index = first_displayed_row * cols;
-            var row_height = get_row_height (first_displayed_widget_index, first_displayed_data_index);
-            offset = row_fraction * row_height;
-        } else {
-            offset = row_fraction * previous_first_displayed_row_height;
-        }
-
-        Idle.add (() => {position_items (first_displayed_row, offset); return false;});
-        previous_adjustment_val = new_val;
-    }
-
-    private uint reflow_timeout_id = 0;
-    private bool block_reflow = true;
-    private void schedule_reflow () {
-        if (reflow_timeout_id > 0) {
-            block_reflow = true;
-            return;
-        } else {
-            reflow_timeout_id = Timeout.add (300, () => {
-                if (block_reflow) {
-                    block_reflow = false;
-                    return Source.CONTINUE;
-                } else {
-                    reflow ();
-                    reflow_timeout_id = 0;
-                    return Source.REMOVE;
-                }
-            });
-        }
-    }
-
-    public void add_data (WidgetData data) {
-        if (n_items < MAX_WIDGETS) {
-            widget_pool.add (factory.new_item ());
-            n_widgets++;
-        }
-
-        data.data_id = n_items;
-        model.add (data);
-        n_items++;
-        schedule_reflow ();
-    }
-
-
-    /** @index is the index of the last item on the previous row (or -1 for the first row) **/
-    private int get_row_height (int widget_index, int data_index) { /* widgets previous updated */
-        var max_h = 0;
-
-        for (int c = 0; c < cols && data_index < n_items; c++) {
-            var item = widget_pool[widget_index];
-            var data = model.lookup_index (data_index);
-            update_item_with_data (item, data);
-
-            int min_h, nat_h, min_w, nat_w;
-            item.get_preferred_width (out min_w, out nat_w);
-            item.get_preferred_height_for_width (min_w, out min_h, out nat_h);
-
-            if (nat_h > max_h) {
-                max_h = nat_h;
-            }
-
-            widget_index = next_widget_index (widget_index);
-            data_index++;
-        }
-
-        return max_h + 2 * vpadding;
-    }
-
-    private void update_item_with_data (Item item, WidgetData data) {
-        if (item.data_id != data.data_id) {
-            item.update_item (data);
-        }
-
-        item.set_max_width (item_width);
-    }
-
-    private void position_items (int first_displayed_row, double offset) {
-        int data_index, widget_index, row_height, last_displayed_data_index, first_displayed_data_index;
-
-        data_index = first_displayed_row * cols;
-
-        if (n_items == 0 || data_index >= n_items)  {
-            return;
-        } else if (data_index < 0) {
-            data_index = 0;
-            offset = 0;
-        }
-
-        if (previous_first_displayed_data_index != data_index) {
-            clear_layout ();
-            previous_first_displayed_data_index = data_index;
-            first_displayed_widget_index = data_index % (highest_displayed_widget_index + 1);
-        }
-
-        first_displayed_data_index = data_index;
-        last_displayed_data_index = data_index;
-        row_height = get_row_height (first_displayed_widget_index, data_index);
-        previous_first_displayed_row_height = row_height;
-        widget_index = first_displayed_widget_index;
-
-        int y = 0 - (int)offset;
-        for (int r = 0; y < layout.get_allocated_height () && data_index < n_items; r++) {
-            int x = 0;
-            for (int c = 0; c < cols && data_index < n_items; c++) {
-                var item = widget_pool[widget_index];
-                int xx = x + hpadding;
-                int yy = y + vpadding;
-
-                if (item.get_parent () != null) {
-                    layout.move (item, xx, yy);
-                } else {
-                    layout.put (item, xx, yy);
-                }
-
-                x += column_width;
-
-                last_displayed_data_index = data_index;
-                highest_displayed_widget_index = int.max (highest_displayed_widget_index, widget_index);
-                widget_index = next_widget_index (widget_index);
-                data_index++;
-            }
-
-            y += row_height;
-            row_height = get_row_height (widget_index, data_index);
-        }
-
-        var items_displayed = last_displayed_data_index - first_displayed_data_index + 1;
-        pool_size = int.max (pool_size, items_displayed + 2 * cols - items_displayed % cols);
-        pool_size = pool_size.clamp (0, n_widgets - 1);
-
-        queue_draw ();
-    }
-
-    private void reflow (Gtk.Allocation? alloc = null) {
-        if (column_width == 0 || block_reflow) {
-            return;
-        }
-
-        cols = layout.get_allocated_width () / column_width;
-
-        if (cols == 0) {
-            return;
-        }
-
-        var new_total_rows = (n_items) / cols + 1;
-        if (total_rows != new_total_rows) {
-            clear_layout ();
-
-            total_rows = new_total_rows;
-
-            var first_displayed_row = previous_first_displayed_data_index / cols;
-
-            highest_displayed_widget_index = 0;
-            pool_size = 0;
-
-            var val = first_displayed_row;
-            var min_val = 0.0;
-            var max_val = (double)(total_rows + 1);
-            var step_increment = 0.05;
-            var page_increment = 1.0;
-            var page_size = 5.0;
-            vadjustment.configure (val, min_val, max_val, step_increment, page_increment, page_size);
-            on_adjustment_value_changed ();
-        }
-    }
-
-    private void clear_layout () {
-        Value val = {};
-        val.init (typeof (int));
-        /* Removing is slow so first move out of window if current displayed else remove */
-        int removed = 0;
-        int moved = 0;
-        foreach (unowned Gtk.Widget w in layout.get_children ()) {
-            layout.child_get_property (w, "x", ref val);
-            if (val.get_int () < -500) {
-                layout.remove (w);
-                removed++;
-            } else {
-                layout.move (w, -1000, -1000);
-                moved++;
-            }
-        }
-    }
-
-    private int next_widget_index (int widget_index) {
-        widget_index++;
-
-        if (widget_index > (pool_size > 0 ? pool_size : n_widgets - 1)) {
-            widget_index = 0;
-        }
-
-        return widget_index;
-    }
-
-    public void sort (CompareDataFunc? func) {
-        model.sort (func);
-        queue_draw ();
     }
 }
 }

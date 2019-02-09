@@ -42,5 +42,9 @@ public interface Model<G> : Object {
     public virtual bool sort (CompareDataFunc func) {
         return false;
     }
+
+    public abstract int get_n_items ();
+
+    public signal void n_items_changed (int n_changed);
 }
 }
