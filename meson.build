@@ -13,16 +13,16 @@ dependency('gtk+-3.0', version: '>=3.22', required: true)
 
 lib = shared_library (
     libname,
+    'lib/Interfaces/SelectionHandler.vala',
+    'lib/Interfaces/SelectionFrame.vala',
+    'lib/Interfaces/Item.vala',
+    'lib/Interfaces/Model.vala',
     'lib/View.vala',
-    'lib/LayoutHandler.vala',
-    'lib/LayoutSelectionHandler.vala',
-    'lib/SelectionFrame.vala',
-    'lib/SelectionFrameRectangle.vala',
     'lib/AbstractItemFactory.vala',
     'lib/AbstractData.vala',
-    'lib/ItemInterface.vala',
-    'lib/ModelInterface.vala',
     'lib/SimpleModel.vala',
+    'lib/LayoutHandler.vala',
+    'lib/SelectionFrameRectangle.vala',
 
     dependencies : [
         dependency ('gtk+-3.0'),
