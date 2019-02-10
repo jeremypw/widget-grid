@@ -29,7 +29,6 @@ public class View : Gtk.Grid {
     private double SCROLL_SENSITIVITY = 0.5; /* The scroll delta required to move the grid position by one step */
     private const double ZOOM_SENSITIVITY = 1.0; /* The scroll delta required to change the item width by one step */
 
-
     private Gtk.Layout layout;
     private LayoutHandler layout_handler;
 
@@ -105,6 +104,8 @@ public class View : Gtk.Grid {
 
         layout.add_events (Gdk.EventMask.SCROLL_MASK |
                            Gdk.EventMask.SMOOTH_SCROLL_MASK |
+                           Gdk.EventMask.BUTTON_PRESS_MASK |
+                           Gdk.EventMask.BUTTON_RELEASE_MASK |
                            Gdk.EventMask.POINTER_MOTION_MASK
         );
 
@@ -118,8 +119,26 @@ public class View : Gtk.Grid {
 
         layout.key_press_event.connect (on_key_press_event);
 
+        layout.button_press_event.connect ((event) => {
+//warning ("layout button press ");
+        });
+
+        layout.button_release_event.connect ((event) => {
+//warning ("layout button press ");
+            layout_handler.end_rubber_banding ();
+        });
+
         layout.delete_event.connect (() => {
             layout_handler.close ();
+            return false;
+        });
+
+        layout.motion_notify_event.connect ((event) => {
+//warning ("layout motion - state mask %u, primary down %s", event.state, ((event.state & Gdk.ModifierType.BUTTON1_MASK) > 0).to_string ());
+            if ((event.state & Gdk.ModifierType.BUTTON1_MASK) > 0) {
+                layout_handler.do_rubber_banding (event);
+            }
+
             return false;
         });
 
@@ -238,6 +257,11 @@ public class View : Gtk.Grid {
         } else {
             item_width -= width_increment;
         }
+    }
+
+    public override bool draw (Cairo.Context ctx) {
+        base.draw (ctx);
+        return layout_handler.draw_rubberband (ctx);
     }
 }
 }

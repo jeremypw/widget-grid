@@ -18,7 +18,16 @@
 
 namespace WidgetGrid {
 
-private class LayoutHandler : Object {
+private class LayoutHandler : Object, LayoutSelectionHandler {
+    struct RowData {
+        int first_data_index;
+        int first_widget_index;
+        int y;
+        int height;
+    }
+
+    private RowData[] row_data;
+
     private const int REFLOW_DELAY_MSEC = 100;
     private const int MAX_WIDGETS = 1000;
     private int pool_size = 0;
@@ -39,7 +48,11 @@ private class LayoutHandler : Object {
     public WidgetGrid.Model<WidgetData> model { get; construct; }
 
     public AbstractItemFactory factory { get; construct; }
+
     public Gtk.Layout layout { get; construct; }
+    public SelectionFrame frame { get; construct; }
+    public bool rubber_banding { get; set; default = false; }
+    public bool can_rubber_band { get; set; default = true; }
 
     private int column_width {
         get {
@@ -52,7 +65,9 @@ private class LayoutHandler : Object {
 
     construct {
         widget_pool = new Vala.ArrayList<Item> ();
+        row_data = new RowData[100];
         vadjustment = new Gtk.Adjustment (0.0, 0.0, 10.0, 1.0, 1.0, 1.0);
+        frame = new SelectionFrameRectangle ();
 
         vadjustment.value_changed.connect (on_adjustment_value_changed);
 
@@ -173,6 +188,12 @@ private class LayoutHandler : Object {
 
         int y = 0 - (int)offset;
         for (int r = 0; y < layout.get_allocated_height () && data_index < n_items; r++) {
+            var r_data = row_data[r];
+            r_data.first_data_index = data_index;
+            r_data.first_widget_index = widget_index;
+            r_data.y = y;
+            r_data.height = row_height;
+
             int x = hpadding;
             for (int c = 0; c < cols && data_index < n_items; c++) {
                 var item = widget_pool[widget_index];
@@ -328,6 +349,10 @@ private class LayoutHandler : Object {
         });
 
         previous_adjustment_val = new_val;
+    }
+
+    private Gtk.Widget get_widget () {
+        return layout;
     }
 }
 }

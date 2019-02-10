@@ -97,7 +97,24 @@ public class DemoItemFactory : AbstractItemFactory {
 
             add (frame);
 
+            add_events (Gdk.EventMask.POINTER_MOTION_MASK);
             button_press_event.connect (on_button_press);
+            motion_notify_event.connect ((event) => {
+//warning ("ITEM motion event");
+                return true;
+            });
+
+            enter_notify_event.connect ((event) => {
+//warning ("ITEM enter");
+                var flags = Gtk.StateFlags.PRELIGHT;
+                set_state_flags (flags, false);
+            });
+            leave_notify_event.connect ((event) => {
+//warning ("ITEM leave");
+                var flags = Gtk.StateFlags.NORMAL;
+                set_state_flags (flags, false);
+
+            });
 
             show_all ();
         }
