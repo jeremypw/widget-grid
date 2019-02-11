@@ -25,42 +25,46 @@ public interface LayoutSelectionHandler : Object, PositionHandler {
     public abstract SelectionFrame frame { get; construct; }
     public abstract bool rubber_banding { get; set; default = false; }
     public abstract bool can_rubber_band { get; set; default = true; }
+    public abstract bool deselect_before_rubber_band { get; set; default = true; }
     public abstract Gee.TreeSet<WidgetData> selected_data { get; construct; }
 
     public abstract Gtk.Widget get_widget ();
 
-    public virtual void do_rubber_banding (Gdk.EventMotion event) {
+    public virtual void start_rubber_banding (Gdk.EventButton event) {
         if (!can_rubber_band) {
+            return;
+        }
+
+        if (deselect_before_rubber_band && (event.state & Gdk.ModifierType.CONTROL_MASK) == 0) {
+            clear_selection ();
+        }
+
+
+        if (!rubber_banding) {
+            var x = (int)(event.x);
+            var y = (int)(event.y);
+            frame.initialize (x, y);
+            rubber_banding = true;
+        }
+
+    }
+
+    public virtual void do_rubber_banding (Gdk.EventMotion event) {
+
+        if (!rubber_banding) {
             return;
         }
 
         var x = (int)(event.x);
         var y = (int)(event.y);
 
-        if (!rubber_banding) {
-            frame.initialize (x, y);
-        } else {
-            var new_width = x - frame.x;
-            var new_height = y - frame.y;
-            var new_x = frame.x;
-            var new_y = frame.y;
 
-            if (new_width < 0) {
-                new_x = x;
-                new_width = -new_width;
-            }
+        var new_width = x - frame.x;
+        var new_height = y - frame.y;
 
-            if (new_height < 0) {
-                new_y = y;
-                new_height = -new_height;
-            }
-
-            frame.update (new_x, new_y, new_width, new_height);
-            mark_selected_in_rectangle ();
-            get_widget ().queue_draw ();
-        }
-
-        rubber_banding = true;
+        frame.update_size (new_width, new_height);
+        mark_selected_in_rectangle (get_framed_rectangle ());
+        get_widget ().queue_draw ();
     }
 
     public virtual void end_rubber_banding () {
@@ -76,15 +80,15 @@ public interface LayoutSelectionHandler : Object, PositionHandler {
         return frame.get_rectangle ();
     }
 
-    protected virtual void mark_selected_in_rectangle () {
+    protected virtual void mark_selected_in_rectangle (Gdk.Rectangle rect) {
         int first_row, first_col;
         int previous_last_row = LayoutSelectionHandler.previous_last_rubberband_row;
         int previous_last_col = LayoutSelectionHandler.previous_last_rubberband_col;
 
-        get_row_col_at_pos (frame.x, frame.y, out first_row, out first_col);
+        var on_first_item = get_row_col_at_pos (rect.x + hpadding, rect.y + vpadding, out first_row, out first_col);
 
         int last_row, last_col;
-        get_row_col_at_pos (frame.x + frame.width, frame.y + frame.height, out last_row, out last_col);
+        var on_last_item = get_row_col_at_pos (rect.x + rect.width - hpadding, rect.y + rect.height - vpadding, out last_row, out last_col);
 
         for (int r = first_row; r <= int.max (last_row, previous_last_row); r++) {
             for (int c = first_col; c <= int.max (last_col, previous_last_col); c++) {

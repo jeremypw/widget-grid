@@ -19,60 +19,50 @@
 namespace WidgetGrid {
 
 private class LayoutHandler : Object, PositionHandler, LayoutSelectionHandler {
-    struct RowData {
-        int first_data_index;
-        int first_widget_index;
-        int y;
-        int height;
-    }
-
-    private RowData[] row_data;
-
     private const int REFLOW_DELAY_MSEC = 100;
     private const int MAX_WIDGETS = 1000;
-    private int pool_size = 0;
 
+    private int pool_size = 0;
     private int previous_first_displayed_data_index = 0;
     private int previous_first_displayed_row_height = 0;
-
-    private Vala.ArrayList<Item> widget_pool;
     private int n_widgets = 0;
     private int first_displayed_widget_index = 0;
     private int highest_displayed_widget_index = 0;
-
-    private int cols = 0;
     private int total_rows = 0;
     private int n_items = 0;
 
     public Gtk.Adjustment vadjustment { get; construct; }
-    public WidgetGrid.Model<WidgetData> model { get; construct; }
-
     public AbstractItemFactory factory { get; construct; }
-
     public Gtk.Layout layout { get; construct; }
+
+    /* PositionHandler properties */
+    public int vpadding { get; set; default = 24;}
+    public int hpadding { get; set;  default = 12;}
+    public int item_width { get; set; }
+    public int cols { get; set; }
+    public WidgetGrid.Model<WidgetData> model { get; construct; }
+    public Gee.AbstractList<Item> widget_pool { get; construct; }
+    public Gee.AbstractList<RowData> row_data { get; set; }
+
+    /* SelectionHandler interface properties */
     public SelectionFrame frame { get; construct; }
     public Gee.TreeSet<WidgetData> selected_data { get; construct; }
     public bool rubber_banding { get; set; default = false; }
     public bool can_rubber_band { get; set; default = true; }
-
-    private int column_width {
-        get {
-            return item_width + hpadding + vpadding;
-        }
-    }
-    public int vpadding { get; set; default = 24;}
-    public int hpadding { get; set;  default = 12;}
-    public int item_width { get; set; }
+    public bool deselect_before_rubber_band { get; set; default = true; }
 
     construct {
-        widget_pool = new Vala.ArrayList<Item> ();
+        widget_pool = new Gee.ArrayList<Item> ();
         selected_data = new Gee.TreeSet<WidgetData> ((CompareDataFunc?)(WidgetData.compare_data_func));
 
-        row_data = new RowData[100];
+        row_data = new Gee.ArrayList<RowData> ();
         vadjustment = new Gtk.Adjustment (0.0, 0.0, 10.0, 1.0, 1.0, 1.0);
         frame = new SelectionFrameRectangle ();
 
         vadjustment.value_changed.connect (on_adjustment_value_changed);
+
+        hpadding = 12;
+        vpadding = 24;
 
         model.n_items_changed.connect ((change) => {
             n_items += change;
@@ -189,20 +179,21 @@ private class LayoutHandler : Object, PositionHandler, LayoutSelectionHandler {
         previous_first_displayed_row_height = row_height;
         widget_index = first_displayed_widget_index;
 
-        int y = 0 - (int)offset;
+        int y = - (int)offset;
         int r;
 
-        for (r = 0; y < layout.get_allocated_height () && data_index < n_items; r++) {
-            row_data[r].first_data_index = data_index;
-            row_data[r].first_widget_index = widget_index;
-            row_data[r].y = y;
-            row_data[r].height = row_height;
+        for (r = 0; y < layout.get_allocated_height () + offset && data_index < n_items; r++) {
+            if (r > row_data.size - 1) {
+                row_data.add (new RowData ());
+            }
+
+            row_data[r].update (data_index, widget_index, y, row_height);
 
             int x = hpadding;
             for (int c = 0; c < cols && data_index < n_items; c++) {
                 var item = widget_pool[widget_index];
                 int xx = x + hpadding;
-                int yy = y + vpadding;
+                int yy = y + vpadding - (int)offset;
 
                 if (item.get_parent () != null) {
                     layout.move (item, xx, yy);
@@ -222,10 +213,11 @@ private class LayoutHandler : Object, PositionHandler, LayoutSelectionHandler {
             row_height = get_row_height (widget_index, data_index);
         }
 
-        row_data[r].first_data_index = int.MAX;
-        row_data[r].first_widget_index = int.MAX;
-        row_data[r].y = int.MAX;
-        row_data[r].height = int.MAX;
+        if (r > row_data.size - 1) {
+            row_data.add (new RowData ());
+        } else {
+            row_data[r].update (int.MAX, int.MAX, int.MAX, int.MAX);
+        }
 
         var items_displayed = last_displayed_data_index - first_displayed_data_index + 1;
         pool_size = int.max (pool_size, items_displayed + 2 * cols - items_displayed % cols);
@@ -347,9 +339,11 @@ private class LayoutHandler : Object, PositionHandler, LayoutSelectionHandler {
             var first_displayed_data_index = first_displayed_row * cols;
             var row_height = get_row_height (first_displayed_widget_index, first_displayed_data_index);
             offset = row_fraction * row_height;
+
         } else {
             offset = row_fraction * previous_first_displayed_row_height;
         }
+
 
         /* Reposition items when idle */
         Idle.add (() => {
@@ -362,32 +356,6 @@ private class LayoutHandler : Object, PositionHandler, LayoutSelectionHandler {
 
     protected Gtk.Widget get_widget () {
         return layout;
-    }
-
-    public bool get_row_col_at_pos (int x, int y, out int row, out int col) {
-        bool on_item = true;
-        double cc = double.min ((double)(cols - 1), (double)x / (double)column_width);
-        double x_offset = cc - (int)cc;
-
-        if (x_offset < hpadding || x_offset > hpadding + item_width) {
-            on_item = false;
-        }
-
-        int index = 0;
-        while (row_data[index].y + row_data[index].height < y) {
-            index++;
-        }
-
-        var y_offset = y - row_data[index].y;
-
-        if (y_offset < vpadding || y_offset > row_data[index].height - vpadding) {
-            on_item = false;
-        }
-
-        row = index;
-        col = (int)cc;
-
-        return on_item;
     }
 
     public WidgetData get_data_at_row_col (int row, int col) {

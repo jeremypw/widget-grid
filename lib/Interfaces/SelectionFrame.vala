@@ -16,6 +16,9 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
+/*** Rectangular frame for rubberband selection.
+     May have negative dimensions if current moving point behind/above starting point.
+***/
 public interface SelectionFrame : Object {
     public abstract int x { get; set; }
     public abstract int y { get; set; }
@@ -23,11 +26,28 @@ public interface SelectionFrame : Object {
     public abstract int height { get; set; }
 
     public abstract void initialize (int x, int y);
-    public abstract void update (int x, int y, int width, int height);
+    public abstract void update_size (int width, int height);
     public abstract void close ();
     public abstract bool draw (Cairo.Context ctx);
 
+    /* Always return positive dimensions */
     public virtual Gdk.Rectangle get_rectangle () {
-        return Gdk.Rectangle () {x = this.x, y = this.y, width = this.width, height = this.height };
+        var rect = Gdk.Rectangle ();
+        rect.x = x;
+        rect.y = y;
+        rect.width = width;
+        rect.height = height;
+
+        if (width < 0) {
+            rect.x = x + width;
+            rect.width = -width;
+        }
+
+        if (height < 0) {
+            rect.y = y + height;
+            rect.height = -height;
+        }
+
+        return rect;
     }
 }

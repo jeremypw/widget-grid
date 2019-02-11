@@ -31,29 +31,28 @@ public class SelectionFrameRectangle : Object, SelectionFrame {
     }
 
     public void initialize (int x, int y) {
-        rect.x = x;
-        rect.y = y;
+        this.x = x;
+        this.y = y;
     }
 
-    public void update (int x, int y, int width, int height) {
-        rect.x = x;
-        rect.y = y;
-        rect.width = width;
-        rect.height = height;
+    public void update_size (int width, int height) {
+        this.width = width;
+        this.height = height;
     }
 
     public void close () {
-        rect.x = 0;
-        rect.y = 0;
-        rect.width = 0;
-        rect.height = 0;
+        x = 0;
+        y = 0;
+        width = 0;
+        height = 0;
     }
 
     public bool draw (Cairo.Context ctx) {
-        double xx = (double)(rect.x);
-        double yy = (double)(rect.y);
-        double ww = (double)(rect.width);
-        double hh = (double)(rect.height);
+        var draw_rect = get_rectangle ();
+        double xx = (double)(draw_rect.x);
+        double yy = (double)(draw_rect.y);
+        double ww = (double)(draw_rect.width);
+        double hh = (double)(draw_rect.height);
 
         ctx.save ();
         ctx.set_source_rgba (0, 0, 1, 0.3);

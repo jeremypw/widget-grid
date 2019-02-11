@@ -119,11 +119,10 @@ public class View : Gtk.Grid {
         layout.key_press_event.connect (on_key_press_event);
 
         layout.button_press_event.connect ((event) => {
-//warning ("layout button press ");
+            layout_handler.start_rubber_banding (event);
         });
 
         layout.button_release_event.connect ((event) => {
-//warning ("layout button press ");
             layout_handler.end_rubber_banding ();
         });
 
