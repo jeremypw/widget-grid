@@ -48,6 +48,9 @@ public class DemoItemFactory : AbstractItemFactory {
             }
         }
 
+        private bool highlighted = false;
+        public bool focused { get; set; default = false; }
+
         public string item_name {
             get {
                 return data != null ? file.get_display_name () : "";
@@ -66,10 +69,6 @@ public class DemoItemFactory : AbstractItemFactory {
         }
 
         construct {
-            var frame = new Gtk.Frame (null);
-            frame.shadow_type = Gtk.ShadowType.OUT;
-            total_padding += frame.margin * 2;
-
             var grid = new Gtk.Grid ();
             total_padding += grid.margin * 2;
             grid.orientation = Gtk.Orientation.VERTICAL;
@@ -92,22 +91,25 @@ public class DemoItemFactory : AbstractItemFactory {
 
             grid.add (image);
             grid.add (label);
+            add (grid);
 
-            frame.add (grid);
+            notify["focused"].connect (() => {
+                if (focused && !highlighted) {
+                    highlight (true);
+                } else if (!focused && highlighted) {
+                    highlight (false);
+                }
+            });
 
-            add (frame);
-
+            add_events (Gdk.EventMask.ENTER_NOTIFY_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK);
             button_press_event.connect (on_button_press);
 
             enter_notify_event.connect ((event) => {
-                var flags = Gtk.StateFlags.PRELIGHT;
-                set_state_flags (flags, false);
+                focused = true;
             });
 
             leave_notify_event.connect ((event) => {
-                var flags = Gtk.StateFlags.NORMAL;
-                set_state_flags (flags, false);
-
+               focused = false;
             });
 
             show_all ();
@@ -182,6 +184,16 @@ public class DemoItemFactory : AbstractItemFactory {
 
         private void show_properties () {
 
+        }
+
+        private void highlight (bool is_highlight) {
+            if (is_highlight) {
+                image.set_from_pixbuf (PF.PixbufUtils.lighten (pix));
+                highlighted = true;
+            } else {
+                image.set_from_pixbuf (pix);
+                highlighted = false;
+            }
         }
     }
 }
