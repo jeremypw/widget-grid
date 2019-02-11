@@ -100,17 +100,15 @@ public class DemoItemFactory : AbstractItemFactory {
             add_events (Gdk.EventMask.POINTER_MOTION_MASK);
             button_press_event.connect (on_button_press);
             motion_notify_event.connect ((event) => {
-//warning ("ITEM motion event");
                 return true;
             });
 
             enter_notify_event.connect ((event) => {
-//warning ("ITEM enter");
                 var flags = Gtk.StateFlags.PRELIGHT;
                 set_state_flags (flags, false);
             });
+
             leave_notify_event.connect ((event) => {
-//warning ("ITEM leave");
                 var flags = Gtk.StateFlags.NORMAL;
                 set_state_flags (flags, false);
 
@@ -148,16 +146,19 @@ public class DemoItemFactory : AbstractItemFactory {
         public void update_item (WidgetData data) {
             assert (data is DemoItemData);
             this.data = data;
-
+            set_selected (data.is_selected);
             label.label = item_name;
             set_max_width_request = 0; /* Ensure pix will be updated when next used */
         }
 
         private void toggle_selected () {
             is_selected = !is_selected;
-            data.is_selected = is_selected;
-            var flags = is_selected ? Gtk.StateFlags.SELECTED : Gtk.StateFlags.NORMAL;
+            set_selected (is_selected);
+        }
 
+        public void set_selected (bool selected) {
+            data.is_selected = selected;
+            var flags = selected ? Gtk.StateFlags.SELECTED : Gtk.StateFlags.NORMAL;
             set_state_flags (flags, true);
         }
 

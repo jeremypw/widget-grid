@@ -16,18 +16,13 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
-public interface SelectionFrame : Object {
-    public abstract int x { get; set; }
-    public abstract int y { get; set; }
-    public abstract int width { get; set; }
-    public abstract int height { get; set; }
+namespace WidgetGrid {
+public interface PositionHandler : Object {
+    protected abstract void position_items (int first_displayed_row, double offset);
+    protected abstract int get_row_height (int widget_index, int data_index);
 
-    public abstract void initialize (int x, int y);
-    public abstract void update (int x, int y, int width, int height);
-    public abstract void close ();
-    public abstract bool draw (Cairo.Context ctx);
-
-    public virtual Gdk.Rectangle get_rectangle () {
-        return Gdk.Rectangle () {x = this.x, y = this.y, width = this.width, height = this.height };
-    }
+    public abstract bool get_row_col_at_pos (int x, int y, out int row, out int col);
+    public abstract WidgetData get_data_at_row_col (int row, int col);
+    public abstract Item get_item_at_row_col (int row, int col);
+}
 }

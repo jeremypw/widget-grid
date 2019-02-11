@@ -16,10 +16,12 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
-public interface LayoutSelectionHandler : Object {
+namespace WidgetGrid {
+public interface LayoutSelectionHandler : Object, PositionHandler {
     public abstract SelectionFrame frame { get; construct; }
     public abstract bool rubber_banding { get; set; default = false; }
     public abstract bool can_rubber_band { get; set; default = true; }
+    public abstract Gee.TreeSet<WidgetData> selected_data { get; construct; }
 
     public abstract Gtk.Widget get_widget ();
 
@@ -46,6 +48,7 @@ public interface LayoutSelectionHandler : Object {
             }
 
             frame.update (new_x, new_y, new_width, new_height);
+            mark_selected_in_rectangle ();
             get_widget ().queue_draw ();
         }
 
@@ -58,8 +61,28 @@ public interface LayoutSelectionHandler : Object {
         get_widget ().queue_draw ();
     }
 
-    public virtual Gdk.Rectangle get_framed_rectangle () {
-        return Gdk.Rectangle () {x = frame.x, y = frame.y, width = frame.width, height = frame.height };
+    public Gdk.Rectangle get_framed_rectangle () {
+        return frame.get_rectangle ();
+    }
+
+    public virtual void mark_selected_in_rectangle () {
+        int first_row, first_col;
+        get_row_col_at_pos (frame.x, frame.y, out first_row, out first_col);
+
+        int last_row, last_col;
+        get_row_col_at_pos (frame.x + frame.width, frame.y + frame.height, out last_row, out last_col);
+
+        for (int r = first_row; r < last_row; r++) {
+            for (int c = first_col; c <= last_col; c++) {
+                var data = get_data_at_row_col (r, c);
+                if (!data.is_selected) {
+                    var item = get_item_at_row_col (r, c);
+                    data.is_selected = true;
+                    item.update_item (data);
+                    selected_data.add (data);
+                }
+            }
+        }
     }
 
     public virtual bool draw_rubberband (Cairo.Context ctx) {
@@ -69,4 +92,5 @@ public interface LayoutSelectionHandler : Object {
 
         return false;
     }
+}
 }

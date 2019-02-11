@@ -15,6 +15,7 @@ lib = shared_library (
     libname,
     'lib/Interfaces/SelectionHandler.vala',
     'lib/Interfaces/SelectionFrame.vala',
+    'lib/Interfaces/PositionHandler.vala',
     'lib/Interfaces/Item.vala',
     'lib/Interfaces/Model.vala',
     'lib/View.vala',

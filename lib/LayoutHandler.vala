@@ -18,7 +18,7 @@
 
 namespace WidgetGrid {
 
-private class LayoutHandler : Object, LayoutSelectionHandler {
+private class LayoutHandler : Object, PositionHandler, LayoutSelectionHandler {
     struct RowData {
         int first_data_index;
         int first_widget_index;
@@ -51,6 +51,7 @@ private class LayoutHandler : Object, LayoutSelectionHandler {
 
     public Gtk.Layout layout { get; construct; }
     public SelectionFrame frame { get; construct; }
+    public Gee.TreeSet<WidgetData> selected_data { get; construct; }
     public bool rubber_banding { get; set; default = false; }
     public bool can_rubber_band { get; set; default = true; }
 
@@ -65,6 +66,8 @@ private class LayoutHandler : Object, LayoutSelectionHandler {
 
     construct {
         widget_pool = new Vala.ArrayList<Item> ();
+        selected_data = new Gee.TreeSet<WidgetData> ((CompareDataFunc?)(WidgetData.compare_data_func));
+
         row_data = new RowData[100];
         vadjustment = new Gtk.Adjustment (0.0, 0.0, 10.0, 1.0, 1.0, 1.0);
         frame = new SelectionFrameRectangle ();
@@ -131,7 +134,7 @@ private class LayoutHandler : Object, LayoutSelectionHandler {
     }
 
     /** @index is the index of the last item on the previous row (or -1 for the first row) **/
-    private int get_row_height (int widget_index, int data_index) { /* widgets previous updated */
+    protected int get_row_height (int widget_index, int data_index) { /* widgets previous updated */
         var max_h = 0;
 
         for (int c = 0; c < cols && data_index < n_items; c++) {
@@ -162,7 +165,7 @@ private class LayoutHandler : Object, LayoutSelectionHandler {
         item.set_max_width (item_width);
     }
 
-    private void position_items (int first_displayed_row, double offset) {
+    protected void position_items (int first_displayed_row, double offset) {
         int data_index, widget_index, row_height, last_displayed_data_index, first_displayed_data_index;
 
         data_index = first_displayed_row * cols;
@@ -187,12 +190,13 @@ private class LayoutHandler : Object, LayoutSelectionHandler {
         widget_index = first_displayed_widget_index;
 
         int y = 0 - (int)offset;
-        for (int r = 0; y < layout.get_allocated_height () && data_index < n_items; r++) {
-            var r_data = row_data[r];
-            r_data.first_data_index = data_index;
-            r_data.first_widget_index = widget_index;
-            r_data.y = y;
-            r_data.height = row_height;
+        int r;
+
+        for (r = 0; y < layout.get_allocated_height () && data_index < n_items; r++) {
+            row_data[r].first_data_index = data_index;
+            row_data[r].first_widget_index = widget_index;
+            row_data[r].y = y;
+            row_data[r].height = row_height;
 
             int x = hpadding;
             for (int c = 0; c < cols && data_index < n_items; c++) {
@@ -217,6 +221,11 @@ private class LayoutHandler : Object, LayoutSelectionHandler {
             y += row_height;
             row_height = get_row_height (widget_index, data_index);
         }
+
+        row_data[r].first_data_index = int.MAX;
+        row_data[r].first_widget_index = int.MAX;
+        row_data[r].y = int.MAX;
+        row_data[r].height = int.MAX;
 
         var items_displayed = last_displayed_data_index - first_displayed_data_index + 1;
         pool_size = int.max (pool_size, items_displayed + 2 * cols - items_displayed % cols);
@@ -351,8 +360,42 @@ private class LayoutHandler : Object, LayoutSelectionHandler {
         previous_adjustment_val = new_val;
     }
 
-    private Gtk.Widget get_widget () {
+    protected Gtk.Widget get_widget () {
         return layout;
+    }
+
+    public bool get_row_col_at_pos (int x, int y, out int row, out int col) {
+        bool on_item = true;
+        double cc = (double)x / (double)column_width;
+        double x_offset = cc - (int)cc;
+
+        if (x_offset < hpadding || x_offset > hpadding + item_width) {
+            on_item = false;
+        }
+
+        int index = 0;
+        while (row_data[index].y + row_data[index].height < y) {
+            index++;
+        }
+
+        var y_offset = y - row_data[index].y;
+
+        if (y_offset < vpadding || y_offset > row_data[index].height - vpadding) {
+            on_item = false;
+        }
+
+        row = index;
+        col = (int)cc;
+
+        return on_item;
+    }
+
+    public WidgetData get_data_at_row_col (int row, int col) {
+       return model.lookup_index (row_data[row].first_data_index + col);
+    }
+
+    public Item get_item_at_row_col (int row, int col) {
+       return widget_pool[(row_data[row].first_widget_index + col)];
     }
 }
 }

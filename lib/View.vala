@@ -134,7 +134,6 @@ public class View : Gtk.Grid {
         });
 
         layout.motion_notify_event.connect ((event) => {
-//warning ("layout motion - state mask %u, primary down %s", event.state, ((event.state & Gdk.ModifierType.BUTTON1_MASK) > 0).to_string ());
             if ((event.state & Gdk.ModifierType.BUTTON1_MASK) > 0) {
                 layout_handler.do_rubber_banding (event);
             }
