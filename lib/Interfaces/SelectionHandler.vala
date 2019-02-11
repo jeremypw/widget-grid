@@ -18,6 +18,10 @@
 
 namespace WidgetGrid {
 public interface LayoutSelectionHandler : Object, PositionHandler {
+    /* We can assume only one rubberbanding operation will occur at a time */
+    private static int previous_last_rubberband_row = 0;
+    private static int previous_last_rubberband_col = 0;
+
     public abstract SelectionFrame frame { get; construct; }
     public abstract bool rubber_banding { get; set; default = false; }
     public abstract bool can_rubber_band { get; set; default = true; }
@@ -26,6 +30,10 @@ public interface LayoutSelectionHandler : Object, PositionHandler {
     public abstract Gtk.Widget get_widget ();
 
     public virtual void do_rubber_banding (Gdk.EventMotion event) {
+        if (!can_rubber_band) {
+            return;
+        }
+
         var x = (int)(event.x);
         var y = (int)(event.y);
 
@@ -56,33 +64,47 @@ public interface LayoutSelectionHandler : Object, PositionHandler {
     }
 
     public virtual void end_rubber_banding () {
+        LayoutSelectionHandler.previous_last_rubberband_row = 0;
+        LayoutSelectionHandler.previous_last_rubberband_col = 0;
+
         rubber_banding = false;
         frame.close ();
         get_widget ().queue_draw ();
     }
 
-    public Gdk.Rectangle get_framed_rectangle () {
+    protected Gdk.Rectangle get_framed_rectangle () {
         return frame.get_rectangle ();
     }
 
-    public virtual void mark_selected_in_rectangle () {
+    protected virtual void mark_selected_in_rectangle () {
         int first_row, first_col;
+        int previous_last_row = LayoutSelectionHandler.previous_last_rubberband_row;
+        int previous_last_col = LayoutSelectionHandler.previous_last_rubberband_col;
+
         get_row_col_at_pos (frame.x, frame.y, out first_row, out first_col);
 
         int last_row, last_col;
         get_row_col_at_pos (frame.x + frame.width, frame.y + frame.height, out last_row, out last_col);
 
-        for (int r = first_row; r < last_row; r++) {
-            for (int c = first_col; c <= last_col; c++) {
+        for (int r = first_row; r <= int.max (last_row, previous_last_row); r++) {
+            for (int c = first_col; c <= int.max (last_col, previous_last_col); c++) {
                 var data = get_data_at_row_col (r, c);
-                if (!data.is_selected) {
+                var to_select = (r <= last_row && c <= last_col);
+                if (data.is_selected != to_select) {
                     var item = get_item_at_row_col (r, c);
-                    data.is_selected = true;
+                    data.is_selected = to_select;
                     item.update_item (data);
-                    selected_data.add (data);
+                    if (to_select) {
+                        selected_data.add (data);
+                    } else {
+                        selected_data.remove (data);
+                    }
                 }
             }
         }
+
+        previous_last_rubberband_col = last_col;
+        previous_last_rubberband_row = last_row;
     }
 
     public virtual bool draw_rubberband (Cairo.Context ctx) {
@@ -92,5 +114,12 @@ public interface LayoutSelectionHandler : Object, PositionHandler {
 
         return false;
     }
+
+    public virtual void clear_selection () {
+        selected_data.clear ();
+        reset_selected_data ();
+    }
+
+    protected abstract void reset_selected_data ();
 }
 }

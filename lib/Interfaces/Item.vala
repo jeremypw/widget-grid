@@ -28,7 +28,7 @@ public interface Item : Gtk.Widget {
     public static int min_height { get { return _min_height; } set { _min_height = value; } default = 16;}
 
     public abstract void get_preferred_height_for_width (int width, out int min_height, out int nat_height);
-    public abstract void update_item (WidgetData data);
+    public abstract void update_item (WidgetData? new_data = null);
 
     public virtual bool equal (Item b) {
         if (data != null && b.data != null) {
@@ -46,6 +46,7 @@ public interface Item : Gtk.Widget {
         set {
             if (data != null) {
                 data.is_selected = value;
+                update_item (data);
             }
         }
     }

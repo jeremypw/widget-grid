@@ -366,7 +366,7 @@ private class LayoutHandler : Object, PositionHandler, LayoutSelectionHandler {
 
     public bool get_row_col_at_pos (int x, int y, out int row, out int col) {
         bool on_item = true;
-        double cc = (double)x / (double)column_width;
+        double cc = double.min ((double)(cols - 1), (double)x / (double)column_width);
         double x_offset = cc - (int)cc;
 
         if (x_offset < hpadding || x_offset > hpadding + item_width) {
@@ -396,6 +396,16 @@ private class LayoutHandler : Object, PositionHandler, LayoutSelectionHandler {
 
     public Item get_item_at_row_col (int row, int col) {
        return widget_pool[(row_data[row].first_widget_index + col)];
+    }
+
+    protected void reset_selected_data () {
+        for (int i = 0; i < model.get_n_items (); i++) {
+            model.lookup_index (i).is_selected = false;
+        }
+
+        for (int i = 0; i < widget_pool.size; i++) {
+            widget_pool[i].set_state_flags (Gtk.StateFlags.NORMAL, true);
+        }
     }
 }
 }

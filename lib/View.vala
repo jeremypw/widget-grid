@@ -32,7 +32,6 @@ public class View : Gtk.Grid {
     private Gtk.Layout layout;
     private LayoutHandler layout_handler;
 
-    public Vala.ArrayList<Item> widget_pool;
     public Model<WidgetData>model {get; set construct; }
     public AbstractItemFactory factory { get; construct; }
 
@@ -173,6 +172,15 @@ public class View : Gtk.Grid {
                 case Gdk.Key.minus:
                     zoom_out ();
                     return true;
+
+                default:
+                    break;
+            }
+        } else {
+            switch (event.keyval) {
+                case Gdk.Key.Escape:
+                    layout_handler.clear_selection ();
+                    break;
 
                 default:
                     break;

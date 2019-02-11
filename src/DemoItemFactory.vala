@@ -143,11 +143,16 @@ public class DemoItemFactory : AbstractItemFactory {
             return true;
         }
 
-        public void update_item (WidgetData data) {
-            assert (data is DemoItemData);
-            this.data = data;
-            set_selected (data.is_selected);
-            label.label = item_name;
+        public void update_item (WidgetData? new_data = null) {
+            if (new_data != null) {
+                this.data = new_data;
+            }
+
+            if (data != null) {
+                set_selected (data.is_selected);
+                label.label = item_name;
+            }
+
             set_max_width_request = 0; /* Ensure pix will be updated when next used */
         }
 
@@ -156,8 +161,10 @@ public class DemoItemFactory : AbstractItemFactory {
             set_selected (is_selected);
         }
 
-        public void set_selected (bool selected) {
-            data.is_selected = selected;
+        private void set_selected (bool selected) {
+            if (data != null) {
+                data.is_selected = selected;
+            }
             var flags = selected ? Gtk.StateFlags.SELECTED : Gtk.StateFlags.NORMAL;
             set_state_flags (flags, true);
         }
