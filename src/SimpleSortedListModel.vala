@@ -16,8 +16,9 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
+/*** A demo WidgetGrid.Model which is sortable.
+***/
 namespace WidgetGrid {
-
 public class SimpleSortableListModel : Object, Model<WidgetData> {
     private Gee.LinkedList<WidgetData> list;
 

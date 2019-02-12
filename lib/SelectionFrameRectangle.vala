@@ -16,9 +16,9 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
-    /*** Used to draw a translucent rectangle for use in rubber band selection.
-       * It may be possible to use a widget to produce more a sophisticated theme-aware appearance.
-    ***/
+/*** Used to draw a translucent rectangle for use in rubber band selection.
+     It may be possible to use a widget to produce more a sophisticated theme-aware appearance.
+***/
 public class SelectionFrameRectangle : Object, SelectionFrame {
     private Gdk.Rectangle rect;
     public int x { get {return rect.x;} set {rect.x = value;}}

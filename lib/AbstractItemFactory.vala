@@ -16,8 +16,11 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
+/*** WidgetGrid.AbstractItemFactory is the basis for a class that generates WidgetGrid.Items on
+     demand.  The factory can supply any widget that implements the WidgetGrid.Item interface.
+     The definition of the Item class is usually contained within the ItemFactory.
+***/
 namespace WidgetGrid {
-
 public abstract class AbstractItemFactory {
     public abstract Item new_item ();
 }

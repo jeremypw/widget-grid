@@ -16,7 +16,7 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
-/*** Rectangular frame for rubberband selection.
+/*** The interface for a rectangular frame for rubberband selection.
      May have negative dimensions if current moving point behind/above starting point.
 ***/
 public interface SelectionFrame : Object {

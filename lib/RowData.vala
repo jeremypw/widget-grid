@@ -16,7 +16,20 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
+/*** WidgetGrid.RowData is used to store relevant information about each displayed row in the View.
+***/
 namespace WidgetGrid {
-public interface Model<Data> : Object {
-    public abstract add (Data data);
+public class RowData {
+    public int first_data_index = int.MAX;
+    public int first_widget_index = int.MAX;
+    public int y = int.MAX;
+    public int height = int.MAX;
+
+    public void update (int fdi, int fwi, int y, int h) {
+        first_data_index = fdi;
+        first_widget_index = fwi;
+        this.y = y;
+        height = h;
+    }
+}
 }

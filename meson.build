@@ -20,10 +20,11 @@ lib = shared_library (
     'lib/Interfaces/Model.vala',
     'lib/View.vala',
     'lib/AbstractItemFactory.vala',
-    'lib/AbstractData.vala',
+    'lib/WidgetData.vala',
     'lib/SimpleModel.vala',
     'lib/LayoutHandler.vala',
     'lib/SelectionFrameRectangle.vala',
+    'lib/RowData.vala',
 
     dependencies : [
         dependency ('gtk+-3.0'),

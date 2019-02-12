@@ -16,9 +16,12 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
-namespace WidgetGrid {
+/*** WidgetGrid.SimpleModel is a basic falback model for WidgetGrid.View if no other is provided
+     on creation of the View.
+     It is based on Vala.ArrayList and does not implement sorting.
+***/
 
-[GenericAccessors]
+namespace WidgetGrid {
 public class SimpleModel : Object, Model<WidgetData> {
     private Vala.ArrayList<WidgetData> list;
 

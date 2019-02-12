@@ -16,8 +16,13 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
+/*** A demo app to show basic abilities of the WidgetGrid.View (i.e. efficient reflow,
+     zooming, rubberband selection).  It gives an example of a widget using the pantheon-files-core
+     library to give a file-manager like view.  It also demonstrates providing an alternative
+     Model that is sortable to use with the View.  IT is possible to choose the size of the model
+     to show that there is little difference in speed of View facilities even with large models.
+***/
 namespace WidgetGrid {
-
 enum ViewType {
     SIMPLE,
     SIMPLE_LARGE_MODEL,

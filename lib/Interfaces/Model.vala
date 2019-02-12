@@ -16,8 +16,9 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
+/*** WidgetGrid.Model interface defines the requirements for a model usable with WidgetGrid.View.
+***/
 namespace WidgetGrid {
-
 [GenericAccessors]
 public interface Model<G> : Object {
     public abstract bool add (G data); /* Returns position inserted at (or -1 if not implemented) */

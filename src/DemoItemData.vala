@@ -16,8 +16,9 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
+/*** A wrapper that makes a GOF.File object suitable as WidgetData for WidgetGrid.View
+***/
 namespace WidgetGrid {
-
 public class DemoItemData : WidgetData {
     public GOF.File file { get; set;}
 

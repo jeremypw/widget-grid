@@ -16,6 +16,10 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
+/*** A demo ItemFactory which generates widgets suitable for display in WidgetGrid.View and which
+     display the icon and name of a GOF.File (supplied as a Widgetdata). The Item is zoomable and clickable
+     and its appearance changes when hovered.
+***/
 namespace WidgetGrid {
 
 public class DemoItemFactory : AbstractItemFactory {

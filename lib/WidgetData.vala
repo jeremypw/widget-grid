@@ -16,8 +16,11 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
+/*** WidgetGrid.WidgetData is the base class for objects stored by WidgetGrid.Model.
+     The data contained herein is used to dynamically update widgets used for display
+     by WidgetGrid.View.
+***/
 namespace WidgetGrid {
-
 public class WidgetData : Object {
     public static int compare_data_func (void* a, void* b) {
         var data1 = (WidgetData)a;

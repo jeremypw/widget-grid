@@ -16,8 +16,11 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
+/*** The WidgetGrid.SelectionHandler interface contains functions associated with selecting items.
+     including handling rubberband selection and storing the selected items.
+***/
 namespace WidgetGrid {
-public interface LayoutSelectionHandler : Object, PositionHandler {
+public interface SelectionHandler : Object, PositionHandler {
     /* We can assume only one rubberbanding operation will occur at a time */
     private static int previous_last_rubberband_row = 0;
     private static int previous_last_rubberband_col = 0;
@@ -39,25 +42,21 @@ public interface LayoutSelectionHandler : Object, PositionHandler {
             clear_selection ();
         }
 
-
         if (!rubber_banding) {
             var x = (int)(event.x);
             var y = (int)(event.y);
             frame.initialize (x, y);
             rubber_banding = true;
         }
-
     }
 
     public virtual void do_rubber_banding (Gdk.EventMotion event) {
-
         if (!rubber_banding) {
             return;
         }
 
         var x = (int)(event.x);
         var y = (int)(event.y);
-
 
         var new_width = x - frame.x;
         var new_height = y - frame.y;
@@ -68,8 +67,8 @@ public interface LayoutSelectionHandler : Object, PositionHandler {
     }
 
     public virtual void end_rubber_banding () {
-        LayoutSelectionHandler.previous_last_rubberband_row = 0;
-        LayoutSelectionHandler.previous_last_rubberband_col = 0;
+        SelectionHandler.previous_last_rubberband_row = 0;
+        SelectionHandler.previous_last_rubberband_col = 0;
 
         rubber_banding = false;
         frame.close ();
@@ -82,13 +81,15 @@ public interface LayoutSelectionHandler : Object, PositionHandler {
 
     protected virtual void mark_selected_in_rectangle (Gdk.Rectangle rect) {
         int first_row, first_col;
-        int previous_last_row = LayoutSelectionHandler.previous_last_rubberband_row;
-        int previous_last_col = LayoutSelectionHandler.previous_last_rubberband_col;
-
-        var on_first_item = get_row_col_at_pos (rect.x + hpadding, rect.y + vpadding, out first_row, out first_col);
-
+        int previous_last_row = SelectionHandler.previous_last_rubberband_row;
+        int previous_last_col = SelectionHandler.previous_last_rubberband_col;
         int last_row, last_col;
-        var on_last_item = get_row_col_at_pos (rect.x + rect.width - hpadding, rect.y + rect.height - vpadding, out last_row, out last_col);
+
+        get_row_col_at_pos (rect.x + hpadding, rect.y + vpadding,
+                            out first_row, out first_col);
+
+        get_row_col_at_pos (rect.x + rect.width - hpadding, rect.y + rect.height - vpadding,
+                            out last_row, out last_col);
 
         for (int r = first_row; r <= int.max (last_row, previous_last_row); r++) {
             for (int c = first_col; c <= int.max (last_col, previous_last_col); c++) {
@@ -124,6 +125,14 @@ public interface LayoutSelectionHandler : Object, PositionHandler {
         reset_selected_data ();
     }
 
-    protected abstract void reset_selected_data ();
+    protected virtual void reset_selected_data () {
+        for (int i = 0; i < model.get_n_items (); i++) {
+            model.lookup_index (i).is_selected = false;
+        }
+
+        for (int i = 0; i < widget_pool.size; i++) {
+            widget_pool[i].set_state_flags (Gtk.StateFlags.NORMAL, true);
+        }
+    }
 }
 }

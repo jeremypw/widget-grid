@@ -16,28 +16,17 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
+/*** The PositionHandler interface contains functions associated with determining the correct position
+     of items, the dimensions of rows, and retrieving items from position data.
+***/
 namespace WidgetGrid {
-public class RowData {
-    public int first_data_index = int.MAX;
-    public int first_widget_index = int.MAX;
-    public int y = int.MAX;
-    public int height = int.MAX;
-
-    public void update (int fdi, int fwi, int y, int h) {
-        first_data_index = fdi;
-        first_widget_index = fwi;
-        this.y = y;
-        height = h;
-    }
-}
-
 public interface PositionHandler : Object {
     public abstract Gee.AbstractList<RowData> row_data { get; set; }
     public abstract Gee.AbstractList<Item> widget_pool { get; construct; }
     public abstract WidgetGrid.Model<WidgetData> model { get; construct; }
 
     public abstract int vpadding { get; set; default = 24;}
-    public abstract int hpadding { get; set;  default = 12;}
+    public abstract int hpadding { get; set; default = 12;}
     public abstract int cols { get; set; }
     public abstract int item_width { get; set; }
     public int column_width {
@@ -47,7 +36,8 @@ public interface PositionHandler : Object {
     }
 
     protected abstract void position_items (int first_displayed_row, double offset);
-    protected abstract int get_row_height (int widget_index, int data_index);
+    protected abstract void update_item_with_data (Item item, WidgetData data);
+    protected abstract int next_widget_index (int current_index);
 
     public bool get_row_col_at_pos (int x, int y, out int row, out int col) {
         bool on_item = true;
@@ -80,7 +70,36 @@ public interface PositionHandler : Object {
         return on_item;
     }
 
-    public abstract WidgetData get_data_at_row_col (int row, int col);
-    public abstract Item get_item_at_row_col (int row, int col);
+    public virtual WidgetData get_data_at_row_col (int row, int col) {
+       return model.lookup_index (row_data[row].first_data_index + col);
+    }
+
+    public virtual Item get_item_at_row_col (int row, int col) {
+       return widget_pool[(row_data[row].first_widget_index + col)];
+    }
+
+    /** @index is the index of the last item on the previous row (or -1 for the first row) **/
+    protected virtual int get_row_height (int widget_index, int data_index) { /* widgets previous updated */
+        var max_h = 0;
+
+        for (int c = 0; c < cols && data_index < model.get_n_items (); c++) {
+            var item = widget_pool[widget_index];
+            var data = model.lookup_index (data_index);
+            update_item_with_data (item, data);
+
+            int min_h, nat_h, min_w, nat_w;
+            item.get_preferred_width (out min_w, out nat_w);
+            item.get_preferred_height_for_width (min_w, out min_h, out nat_h);
+
+            if (nat_h > max_h) {
+                max_h = nat_h;
+            }
+
+            widget_index = next_widget_index (widget_index);
+            data_index++;
+        }
+
+        return max_h + 2 * vpadding;
+    }
 }
 }

@@ -16,8 +16,9 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
-/*** WidgetGrid.View handles layout and scrollbar, adding items to and sorting the model, and reacting to some user input.
-   * The details of laying out the widgets in a grid, scrolling and zooming them is passed off to the WidgetGrid.LayoutHandler
+/*** WidgetGrid.View handles layout and scrollbar, adding items to and sorting the model, and reacting
+     to some user input. The details of laying out the widgets in a grid, scrolling and zooming them is
+     passed off to the WidgetGrid.LayoutHandler
 ***/
 namespace WidgetGrid {
 
@@ -26,7 +27,7 @@ public class View : Gtk.Grid {
     private const int MIN_ITEM_WIDTH = 32;
     private const int MAX_ITEM_WIDTH = 512;
 
-    private double SCROLL_SENSITIVITY = 0.5; /* The scroll delta required to move the grid position by one step */
+    private const double SCROLL_SENSITIVITY = 0.5; /* The scroll delta required to move the grid position by one step */
     private const double ZOOM_SENSITIVITY = 1.0; /* The scroll delta required to change the item width by one step */
 
     private Gtk.Layout layout;

@@ -16,9 +16,14 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
+/*** WidgetGrid.LayoutHandler handles direct manipulation of the layout.
+     Functions for positioning items in the layout and identifying items from a position are contained in
+     the PositionHandler interface.
+     Functions for selecting items by rubberbanding and storing the selection are contained in
+     the SelectionHandler interface
+***/
 namespace WidgetGrid {
-
-private class LayoutHandler : Object, PositionHandler, LayoutSelectionHandler {
+private class LayoutHandler : Object, PositionHandler, SelectionHandler {
     private const int REFLOW_DELAY_MSEC = 100;
     private const int MAX_WIDGETS = 1000;
 
@@ -37,7 +42,7 @@ private class LayoutHandler : Object, PositionHandler, LayoutSelectionHandler {
 
     /* PositionHandler properties */
     public int vpadding { get; set; default = 24;}
-    public int hpadding { get; set;  default = 12;}
+    public int hpadding { get; set; default = 12;}
     public int item_width { get; set; }
     public int cols { get; set; }
     public WidgetGrid.Model<WidgetData> model { get; construct; }
@@ -123,30 +128,6 @@ private class LayoutHandler : Object, PositionHandler, LayoutSelectionHandler {
         }
     }
 
-    /** @index is the index of the last item on the previous row (or -1 for the first row) **/
-    protected int get_row_height (int widget_index, int data_index) { /* widgets previous updated */
-        var max_h = 0;
-
-        for (int c = 0; c < cols && data_index < n_items; c++) {
-            var item = widget_pool[widget_index];
-            var data = model.lookup_index (data_index);
-            update_item_with_data (item, data);
-
-            int min_h, nat_h, min_w, nat_w;
-            item.get_preferred_width (out min_w, out nat_w);
-            item.get_preferred_height_for_width (min_w, out min_h, out nat_h);
-
-            if (nat_h > max_h) {
-                max_h = nat_h;
-            }
-
-            widget_index = next_widget_index (widget_index);
-            data_index++;
-        }
-
-        return max_h + 2 * vpadding;
-    }
-
     private void update_item_with_data (Item item, WidgetData data) {
         if (item.data_id != data.data_id) {
             item.update_item (data);
@@ -160,7 +141,7 @@ private class LayoutHandler : Object, PositionHandler, LayoutSelectionHandler {
 
         data_index = first_displayed_row * cols;
 
-        if (n_items == 0 || data_index >= n_items)  {
+        if (n_items == 0 || data_index >= n_items) {
             return;
         } else if (data_index < 0) {
             data_index = 0;
@@ -344,7 +325,6 @@ private class LayoutHandler : Object, PositionHandler, LayoutSelectionHandler {
             offset = row_fraction * previous_first_displayed_row_height;
         }
 
-
         /* Reposition items when idle */
         Idle.add (() => {
             position_items (first_displayed_row, offset);
@@ -356,24 +336,6 @@ private class LayoutHandler : Object, PositionHandler, LayoutSelectionHandler {
 
     protected Gtk.Widget get_widget () {
         return layout;
-    }
-
-    public WidgetData get_data_at_row_col (int row, int col) {
-       return model.lookup_index (row_data[row].first_data_index + col);
-    }
-
-    public Item get_item_at_row_col (int row, int col) {
-       return widget_pool[(row_data[row].first_widget_index + col)];
-    }
-
-    protected void reset_selected_data () {
-        for (int i = 0; i < model.get_n_items (); i++) {
-            model.lookup_index (i).is_selected = false;
-        }
-
-        for (int i = 0; i < widget_pool.size; i++) {
-            widget_pool[i].set_state_flags (Gtk.StateFlags.NORMAL, true);
-        }
     }
 }
 }
