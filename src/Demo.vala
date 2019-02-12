@@ -64,7 +64,8 @@ public class DemoWindow : Gtk.ApplicationWindow {
         show_all ();
 
         app_menu.change_view.connect (change_view);
-
+        view.item_clicked.connect (on_view_item_clicked);
+        view.background_clicked.connect (on_view_background_clicked);
     }
 
     private void populate_view (View view, int copies) {
@@ -160,6 +161,34 @@ public class DemoWindow : Gtk.ApplicationWindow {
         populate_view (view, copies);
         view.show_all ();
         add (view);
+    }
+
+    private void on_view_item_clicked (Item item, Gdk.EventButton event) {
+        switch (event.button) {
+            case Gdk.BUTTON_PRIMARY:
+                item.button_press_event (event);
+                break;
+
+            case Gdk.BUTTON_SECONDARY:
+                show_item_context_menu (view.get_selected ());
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    private void on_view_background_clicked (Gdk.EventButton event) {
+        show_background_context_menu (view.get_selected ());
+    }
+
+
+    private void show_item_context_menu (WidgetData[] selected) {
+        warning ("show item context menu");
+    }
+
+    private void show_background_context_menu (WidgetData[] selected) {
+        warning ("show item context menu");
     }
 
     private class TopMenu : Gtk.HeaderBar {

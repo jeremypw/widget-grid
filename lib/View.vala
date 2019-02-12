@@ -18,11 +18,15 @@
 
 /*** WidgetGrid.View handles layout and scrollbar, adding items to and sorting the model, and reacting
      to some user input. The details of laying out the widgets in a grid, scrolling and zooming them is
-     passed off to the WidgetGrid.LayoutHandler
+     passed off to the WidgetGrid.LayoutHandler.
+*
+     View is under an EventBox in order to capture events before they reach the displayed widgets to allow
+     rubberbanding and to emit special signals depending on where the event occured (on item or on background).
+     It is up to the App to deal with these signals appropriately, e.g. by displaying a context menu.
 ***/
 namespace WidgetGrid {
 
-public class View : Gtk.Grid {
+public class View : Gtk.EventBox {
     private static int total_items_added = 0; /* Used to ID data; only ever increases */
     private const int MIN_ITEM_WIDTH = 32;
     private const int MAX_ITEM_WIDTH = 512;
@@ -74,11 +78,16 @@ public class View : Gtk.Grid {
     public int vpadding { get; set; default = 6; }
 
     public signal void selection_changed ();
+    public signal void item_clicked (Item item, Gdk.EventButton event);
+    public signal void background_clicked (Gdk.EventButton event);
 
     construct {
-        hexpand = true;
-        vexpand = true;
-        orientation = Gtk.Orientation.HORIZONTAL;
+        set_above_child (true);
+
+        var grid = new Gtk.Grid ();
+        grid.hexpand = true;
+        grid.vexpand = true;
+        grid.orientation = Gtk.Orientation.HORIZONTAL;
         item_width_index = 3;
 
         layout = new Gtk.Layout ();
@@ -95,21 +104,22 @@ public class View : Gtk.Grid {
         var scrollbar = new Gtk.Scrollbar (Gtk.Orientation.VERTICAL, layout_handler.vadjustment);
         scrollbar.set_slider_size_fixed (true);
 
-        add (layout);
-        add (scrollbar);
+        grid.add (layout);
+        grid.add (scrollbar);
+        add (grid);
 
         size_allocate.connect (() => {
             layout_handler.configure ();
         });
 
-        layout.add_events (Gdk.EventMask.SCROLL_MASK |
-                           Gdk.EventMask.SMOOTH_SCROLL_MASK |
-                           Gdk.EventMask.BUTTON_PRESS_MASK |
-                           Gdk.EventMask.BUTTON_RELEASE_MASK |
-                           Gdk.EventMask.POINTER_MOTION_MASK
+        add_events (Gdk.EventMask.SCROLL_MASK |
+                    Gdk.EventMask.SMOOTH_SCROLL_MASK |
+                    Gdk.EventMask.BUTTON_PRESS_MASK |
+                    Gdk.EventMask.BUTTON_RELEASE_MASK |
+                    Gdk.EventMask.POINTER_MOTION_MASK
         );
 
-        layout.scroll_event.connect ((event) => {
+        scroll_event.connect ((event) => {
             if ((event.state & Gdk.ModifierType.CONTROL_MASK) == 0) { /* Control key not pressed */
                 return handle_scroll (event);
             } else {
@@ -117,22 +127,37 @@ public class View : Gtk.Grid {
             }
         });
 
-        layout.key_press_event.connect (on_key_press_event);
+        key_press_event.connect (on_key_press_event);
 
-        layout.button_press_event.connect ((event) => {
-            layout_handler.start_rubber_banding (event);
+        button_press_event.connect ((event) => {
+            int x = (int)(event.x);
+            int y = (int)(event.y);
+
+            var item = layout_handler.get_item_at_pos (x, y);
+            var on_item = item != null;
+
+            if (event.button == Gdk.BUTTON_PRIMARY &&
+                layout_handler.can_rubber_band &&
+                !on_item) {
+
+                layout_handler.start_rubber_banding (event);
+            } else if (on_item) {
+                item_clicked (item, event);
+            } else {
+                background_clicked (event);
+            }
         });
 
-        layout.button_release_event.connect ((event) => {
+        button_release_event.connect ((event) => {
             layout_handler.end_rubber_banding ();
         });
 
-        layout.delete_event.connect (() => {
+        delete_event.connect (() => {
             layout_handler.close ();
             return false;
         });
 
-        layout.motion_notify_event.connect ((event) => {
+        motion_notify_event.connect ((event) => {
             if ((event.state & Gdk.ModifierType.BUTTON1_MASK) > 0) {
                 layout_handler.do_rubber_banding (event);
             }
@@ -269,6 +294,10 @@ public class View : Gtk.Grid {
     public override bool draw (Cairo.Context ctx) {
         base.draw (ctx);
         return layout_handler.draw_rubberband (ctx);
+    }
+
+    public WidgetData[] get_selected () {
+        return layout_handler.selected_data.to_array ();
     }
 }
 }

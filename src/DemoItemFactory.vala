@@ -106,7 +106,7 @@ public class DemoItemFactory : AbstractItemFactory {
             });
 
             add_events (Gdk.EventMask.ENTER_NOTIFY_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK);
-            button_press_event.connect (on_button_press);
+            button_press_event.connect_after (on_button_press);
 
             enter_notify_event.connect ((event) => {
                 focused = true;
@@ -177,17 +177,9 @@ public class DemoItemFactory : AbstractItemFactory {
                     toggle_selected ();
                     return true;
 
-                case Gdk.BUTTON_SECONDARY:
-                    show_properties ();
-                    return true;
-
                 default:
                     return false;
             }
-        }
-
-        private void show_properties () {
-
         }
 
         private void highlight (bool is_highlight) {
