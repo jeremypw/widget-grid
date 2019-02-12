@@ -170,7 +170,7 @@ public class DemoWindow : Gtk.ApplicationWindow {
                 break;
 
             case Gdk.BUTTON_SECONDARY:
-                show_item_context_menu (view.get_selected ());
+                show_item_context_menu (item, view.get_selected ());
                 break;
 
             default:
@@ -179,16 +179,30 @@ public class DemoWindow : Gtk.ApplicationWindow {
     }
 
     private void on_view_background_clicked (Gdk.EventButton event) {
-        show_background_context_menu (view.get_selected ());
+        if (event.button == Gdk.BUTTON_SECONDARY) {
+            show_background_context_menu_at ((int)(event.x), (int)(event.y));
+        }
     }
 
 
-    private void show_item_context_menu (WidgetData[] selected) {
-        warning ("show item context menu");
+    private void show_item_context_menu (Item item, WidgetData[] selected) {
+        var popover = new Gtk.Popover (item);
+        var button = new Gtk.Button.with_label ("Item context menu");
+        button.clicked.connect (() => {popover.popdown ();});
+        popover.add (button);
+        popover.show_all ();
+        popover.popup ();
     }
 
-    private void show_background_context_menu (WidgetData[] selected) {
-        warning ("show item context menu");
+    private void show_background_context_menu_at (int x, int y) {
+        var popover = new Gtk.Popover (view);
+        var rect = Gdk.Rectangle () {x = x, y = y, width = 1, height = 1};
+        popover.set_pointing_to (rect);
+        var button = new Gtk.Button.with_label ("Background context menu");
+        button.clicked.connect (() => {popover.popdown ();});
+        popover.add (button);
+        popover.show_all ();
+        popover.popup ();
     }
 
     private class TopMenu : Gtk.HeaderBar {

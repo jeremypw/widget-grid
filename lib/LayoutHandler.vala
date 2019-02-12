@@ -100,42 +100,6 @@ private class LayoutHandler : Object, PositionHandler, SelectionHandler {
         );
     }
 
-    /* Reflow at most 1000 / REFLOW_DELAY_MSEC times a second */
-    private uint reflow_timeout_id = 0;
-    public void configure () {
-        if (reflow_timeout_id > 0) {
-            return;
-        } else {
-            reflow_timeout_id = Timeout.add (REFLOW_DELAY_MSEC, () => {
-                reflow ();
-                reflow_timeout_id = 0;
-                return Source.REMOVE;
-            });
-        }
-    }
-
-    public void scroll_steps (int steps) {
-        vadjustment.set_value (vadjustment.get_value () + vadjustment.get_step_increment () * steps * accel);
-    }
-
-    public void close () {
-        if (scroll_accel_timeout_id > 0) {
-            Source.remove (scroll_accel_timeout_id);
-        }
-
-        if (reflow_timeout_id > 0) {
-            Source.remove (reflow_timeout_id);
-        }
-    }
-
-    private void update_item_with_data (Item item, WidgetData data) {
-        if (item.data_id != data.data_id) {
-            item.update_item (data);
-        }
-
-        item.set_max_width (item_width);
-    }
-
     protected void position_items (int first_displayed_row, double offset) {
         int data_index, widget_index, row_height, last_displayed_data_index, first_displayed_data_index;
 
@@ -182,6 +146,8 @@ private class LayoutHandler : Object, PositionHandler, SelectionHandler {
                     layout.put (item, xx, yy);
                 }
 
+                item.set_size_request (item_width, row_height - 2 * hpadding);
+
                 x += column_width;
 
                 last_displayed_data_index = data_index;
@@ -205,6 +171,20 @@ private class LayoutHandler : Object, PositionHandler, SelectionHandler {
         pool_size = pool_size.clamp (0, n_widgets - 1);
 
         layout.queue_draw ();
+    }
+
+    /* Reflow at most 1000 / REFLOW_DELAY_MSEC times a second */
+    private uint reflow_timeout_id = 0;
+    public void configure () {
+        if (reflow_timeout_id > 0) {
+            return;
+        } else {
+            reflow_timeout_id = Timeout.add (REFLOW_DELAY_MSEC, () => {
+                reflow ();
+                reflow_timeout_id = 0;
+                return Source.REMOVE;
+            });
+        }
     }
 
     private void reflow (Gtk.Allocation? alloc = null) {
@@ -238,34 +218,6 @@ private class LayoutHandler : Object, PositionHandler, SelectionHandler {
             vadjustment.configure (val, min_val, max_val, step_increment, page_increment, page_size);
             on_adjustment_value_changed ();
         }
-    }
-
-    private void clear_layout () {
-        Value val = {};
-        val.init (typeof (int));
-        /* Removing is slow so first move out of window if current displayed else remove */
-        int removed = 0;
-        int moved = 0;
-        foreach (unowned Gtk.Widget w in layout.get_children ()) {
-            layout.child_get_property (w, "x", ref val);
-            if (val.get_int () < -500) {
-                layout.remove (w);
-                removed++;
-            } else {
-                layout.move (w, -1000, -1000);
-                moved++;
-            }
-        }
-    }
-
-    private int next_widget_index (int widget_index) {
-        widget_index++;
-
-        if (widget_index > (pool_size > 0 ? pool_size : n_widgets - 1)) {
-            widget_index = 0;
-        }
-
-        return widget_index;
     }
 
     /* This implements an accelerating scroll rate during a continuous smooth scroll with touchpad
@@ -332,6 +284,57 @@ private class LayoutHandler : Object, PositionHandler, SelectionHandler {
         });
 
         previous_adjustment_val = new_val;
+    }
+
+    public void scroll_steps (int steps) {
+        vadjustment.set_value (vadjustment.get_value () + vadjustment.get_step_increment () * steps * accel);
+    }
+
+    private void clear_layout () {
+        Value val = {};
+        val.init (typeof (int));
+        /* Removing is slow so first move out of window if current displayed else remove */
+        int removed = 0;
+        int moved = 0;
+        foreach (unowned Gtk.Widget w in layout.get_children ()) {
+            layout.child_get_property (w, "x", ref val);
+            if (val.get_int () < -500) {
+                layout.remove (w);
+                removed++;
+            } else {
+                layout.move (w, -1000, -1000);
+                moved++;
+            }
+        }
+    }
+
+    public void close () {
+        if (scroll_accel_timeout_id > 0) {
+            Source.remove (scroll_accel_timeout_id);
+        }
+
+        if (reflow_timeout_id > 0) {
+            Source.remove (reflow_timeout_id);
+        }
+    }
+
+    private void update_item_with_data (Item item, WidgetData data) {
+        if (item.data_id != data.data_id) {
+            item.update_item (data);
+        }
+
+        item.set_max_width (item_width);
+    }
+
+
+    private int next_widget_index (int widget_index) {
+        widget_index++;
+
+        if (widget_index > (pool_size > 0 ? pool_size : n_widgets - 1)) {
+            widget_index = 0;
+        }
+
+        return widget_index;
     }
 
     protected Gtk.Widget get_widget () {

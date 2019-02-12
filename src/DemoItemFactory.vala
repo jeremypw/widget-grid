@@ -77,7 +77,7 @@ public class DemoItemFactory : AbstractItemFactory {
             total_padding += grid.margin * 2;
             grid.orientation = Gtk.Orientation.VERTICAL;
             grid.halign = Gtk.Align.CENTER;
-            grid.valign = Gtk.Align.CENTER;
+            grid.valign = Gtk.Align.START;
 
             image = new Gtk.Image.from_pixbuf (pix);
             image.margin = 2;

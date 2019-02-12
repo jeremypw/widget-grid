@@ -59,7 +59,6 @@ public interface PositionHandler : Object {
         }
 
         var y_offset = y - row_data[index].y;
-
         if (y_offset < vpadding || y_offset > row_data[index].height - vpadding) {
             on_item = false;
         }
