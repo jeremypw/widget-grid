@@ -23,7 +23,7 @@
      to show that there is little difference in speed of View facilities even with large models.
 ***/
 namespace WidgetGrid {
-enum ViewType {
+public enum ViewType {
     SIMPLE,
     SIMPLE_LARGE_MODEL,
     SIMPLE_VERY_LARGE_MODEL,
@@ -48,14 +48,17 @@ public class App : Gtk.Application {
 }
 
 public class DemoWindow : Gtk.ApplicationWindow {
-    private TopMenu top_menu;
+    private Gtk.HeaderBar top_menu;
     private View view;
     private Model model;
     GOF.Directory.Async dir;
 
     construct {
         var app_menu = new AppMenu ();
-        top_menu = new TopMenu (app_menu);
+        top_menu = new Gtk.HeaderBar ();
+        top_menu.pack_end (app_menu);
+        top_menu.show_close_button = true;
+
         set_titlebar (top_menu);
         set_default_size (800, 600);
         resizable = true;
@@ -184,12 +187,23 @@ public class DemoWindow : Gtk.ApplicationWindow {
         }
     }
 
-
     private void show_item_context_menu (Item item, WidgetData[] selected) {
         var popover = new Gtk.Popover (item);
-        var button = new Gtk.Button.with_label ("Item context menu");
+
+        var grid = new Gtk.Grid ();
+        grid.orientation = Gtk.Orientation.VERTICAL;
+        grid.margin = 12;
+        grid.add (new PropertiesGrid (((DemoItem)(item)).file));
+
+        var button = new Gtk.Button.with_label ("Close Item Context Menu");
+        button.margin = 12;
+        button.halign = Gtk.Align.END;
+        button.hexpand = false;
         button.clicked.connect (() => {popover.popdown ();});
-        popover.add (button);
+
+        grid.add (button);
+
+        popover.add (grid);
         popover.show_all ();
         popover.popup ();
     }
@@ -198,67 +212,15 @@ public class DemoWindow : Gtk.ApplicationWindow {
         var popover = new Gtk.Popover (view);
         var rect = Gdk.Rectangle () {x = x, y = y, width = 1, height = 1};
         popover.set_pointing_to (rect);
-        var button = new Gtk.Button.with_label ("Background context menu");
+
+        var button = new Gtk.Button.with_label ("Close Background Context Menu");
+        button.halign = Gtk.Align.END;
+        button.hexpand = false;
         button.clicked.connect (() => {popover.popdown ();});
+
         popover.add (button);
         popover.show_all ();
         popover.popup ();
-    }
-
-    private class TopMenu : Gtk.HeaderBar {
-        public Gtk.MenuButton menu { get; construct; }
-
-        construct {
-            pack_end (menu);
-        }
-
-        public TopMenu (AppMenu menu) {
-            Object (menu: menu,
-                    show_close_button: true);
-        }
-    }
-
-    private class AppMenu : Gtk.MenuButton {
-        public signal void change_view (ViewType type);
-
-        construct {
-            var popover = new Gtk.Popover (this);
-            var listbox = new Gtk.ListBox ();
-
-            listbox.add (make_viewtype_button ("Simple Unsorted View", ViewType.SIMPLE));
-            listbox.add (make_viewtype_button ("Simple Sorted View", ViewType.SIMPLE_SORTED));
-            listbox.add (make_viewtype_button ("Large Unsorted Model", ViewType.SIMPLE_LARGE_MODEL));
-            listbox.add (make_viewtype_button ("Very Large Unsorted Model", ViewType.SIMPLE_VERY_LARGE_MODEL));
-            listbox.add (make_viewtype_button ("Large Sorted Model", ViewType.SORTED_LARGE_MODEL));
-            listbox.add (make_viewtype_button ("Very Large Sorted Model", ViewType.SORTED_VERY_LARGE_MODEL));
-
-            popover.add (listbox);
-            popover.show_all ();
-            popover.hide ();
-
-            set_popover (popover);
-        }
-
-        public AppMenu () {
-            Object (
-                image: new Gtk.Image.from_icon_name ("open-menu", Gtk.IconSize.LARGE_TOOLBAR),
-                tooltip_text: "Options"
-            );
-        }
-
-        private void handle_button (ViewType type) {
-            popover.hide ();
-            change_view (type);
-        }
-
-        private Gtk.Button make_viewtype_button (string label, ViewType type) {
-            var button = new Gtk.Button.with_label (label);
-            button.clicked.connect (() => {
-                handle_button (type);
-            });
-
-            return button;
-        }
     }
 }
 }
