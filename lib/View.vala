@@ -345,10 +345,9 @@ public class View : Gtk.Overlay {
 
     public void set_allowed_widths (int[] widths) {
         if (widths.length > 0) {
-            allowed_item_widths = new int[widths.length];
-            var sorted_widths = new GLib.List<int> ();
-            foreach (int i in widths) {
-                sorted_widths.insert_sorted (i.clamp (minimum_item_width, maximum_item_width), (a, b) => {
+
+            /* Ensure allowed widths are unique and sorted in ascending order */
+            var sorted_width_set = new Gee.TreeSet<int> ((a, b) => {
                     if (a == b) {
                         return 0;
                     } else if (a > b) {
@@ -357,10 +356,15 @@ public class View : Gtk.Overlay {
                         return -1;
                     }
                 });
+
+            foreach (int i in widths) {
+                sorted_width_set.add (i.clamp (minimum_item_width, maximum_item_width));
             }
 
+            allowed_item_widths = new int[sorted_width_set.size];
+
             int index = 0;
-            foreach (int i in sorted_widths) {
+            foreach (int i in sorted_width_set) {
                 allowed_item_widths[index] = i;
                 index++;
             }

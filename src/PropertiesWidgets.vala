@@ -74,16 +74,17 @@ public class ValueSwitch : Gtk.Switch {
 
 public class ValueStringCombo : Gtk.ComboBoxText {
     public ValueStringCombo (string[] strings, string current_string) {
-        Object ();
+        Object (has_entry: true);
 
         int index = 0;
         bool current_in_list = false;
         foreach (string s in strings) {
+            append (index.to_string (), s);
             if (current_string == s) {
                 current_in_list = true;
                 set_active (index);
             }
-            append (index.to_string (), s);
+
             index++;
         }
 

@@ -95,8 +95,17 @@ public class ViewPropertiesGrid : Gtk.Grid {
         fixed_item_widths_switch.set_state (view.fixed_item_widths);
 
         fixed_widths_array_combo.changed.connect (() => {
+            GLib.Regex non_num;
+
+            try {
+                non_num = new GLib.Regex ("[^0-9]+");
+            } catch (Error e) {
+                critical ("Regex error %s", e.message);
+                return;
+            }
+
             var txt = fixed_widths_array_combo.get_active_text ();
-            var width_text_array = txt.split (",");
+            var width_text_array = non_num.split (txt);
             var width_array = new int[width_text_array.length];
             int index = 0;
             foreach (string s in width_text_array) {
