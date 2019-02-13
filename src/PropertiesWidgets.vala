@@ -56,5 +56,19 @@ public class ValueIntScale : Gtk.Scale {
 
         get_style_context ().add_class (Gtk.STYLE_CLASS_SCALE_HAS_MARKS_BELOW);
     }
+
+    public void configure (int min, int max, int step, int val) {
+        get_adjustment ().configure ((double)val, (double)min, (double)max, (double)step, 1, 1);
+    }
+}
+
+public class ValueSwitch : Gtk.Switch {
+    public ValueSwitch (bool on) {
+        Object (
+            state: on,
+            hexpand: false,
+            vexpand: false
+        );
+    }
 }
 }

@@ -67,6 +67,9 @@ public class DemoWindow : Gtk.ApplicationWindow {
         resizable = true;
 
         change_view (ViewType.SIMPLE);
+        view.set_allowed_widths ({24, 64, 128});
+        view.minimum_item_width = 16;
+        view.maximum_item_width = 512;
         show_all ();
 
         app_menu.change_view.connect (change_view);

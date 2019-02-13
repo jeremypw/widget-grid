@@ -30,8 +30,6 @@ namespace WidgetGrid {
 
 public class View : Gtk.Overlay {
     private static int total_items_added = 0; /* Used to ID data; only ever increases */
-    private const int MIN_ITEM_WIDTH = 32;
-    private const int MAX_ITEM_WIDTH = 512;
     private const int DEFAULT_HPADDING = 12;
     private const int DEFAULT_VPADDING = 24;
 
@@ -42,23 +40,45 @@ public class View : Gtk.Overlay {
     private Gtk.EventBox event_box;
     private LayoutHandler layout_handler;
 
+    public int minimum_item_width { get; set; default = 16; }
+    public int maximum_item_width { get; set; default = 512; }
+
+    private int _item_width_index = 0;
+    public int item_width_index {
+        get {
+            if (fixed_item_widths) {
+                return _item_width_index;
+            } else {
+                return -1;
+            }
+        }
+
+        set {
+            if (fixed_item_widths && value != _item_width_index) {
+                _item_width_index = value.clamp (0, allowed_item_widths.length - 1);
+                item_width = allowed_item_widths[item_width_index];
+            }
+        }
+    }
+
     public Model<WidgetData>model {get; set construct; }
     public AbstractItemFactory factory { get; construct; }
 
     public int[] allowed_item_widths = {16, 24, 32, 48, 64, 96, 128, 256, 512};
     public int width_increment { get; set; default = 6; }
-    public int minimum_item_width { get; set; default = MIN_ITEM_WIDTH; }
-    public int maximum_item_width { get; set; default = MAX_ITEM_WIDTH; }
-    public int item_width_index { get; private set; }
-    public bool fixed_item_widths = true;
+    public bool fixed_item_widths { get; set; default = true;}
 
-    private int _item_width = MIN_ITEM_WIDTH;
+    private int _item_width = 0;
     public int item_width {
         get {
             return _item_width;
         }
 
         set {
+            if (value == _item_width) {
+                return;
+            }
+
             int new_width = 0;
             var n_allowed = allowed_item_widths.length;
             if (fixed_item_widths && n_allowed > 0) {
@@ -310,6 +330,32 @@ public class View : Gtk.Overlay {
 
     public WidgetData[] get_selected () {
         return layout_handler.selected_data.to_array ();
+    }
+
+    public void set_allowed_widths (int[] widths) {
+        if (widths.length > 0) {
+            allowed_item_widths = new int[widths.length];
+            var sorted_widths = new GLib.List<int> ();
+            foreach (int i in widths) {
+                sorted_widths.insert_sorted (i.clamp (minimum_item_width, maximum_item_width), (a, b) => {
+                    if (a == b) {
+                        return 0;
+                    } else if (a > b) {
+                        return 1;
+                    } else {
+                        return -1;
+                    }
+                });
+            }
+
+            int index = 0;
+            foreach (int i in sorted_widths) {
+                allowed_item_widths[index] = i;
+                index++;
+            }
+
+            item_width_index = item_width_index.clamp (0, allowed_item_widths.length - 1);
+        }
     }
 }
 }
