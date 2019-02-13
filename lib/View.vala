@@ -64,7 +64,7 @@ public class View : Gtk.Overlay {
     public Model<WidgetData>model {get; set construct; }
     public AbstractItemFactory factory { get; construct; }
 
-    public int[] allowed_item_widths = {16, 24, 32, 48, 64, 96, 128, 256, 512};
+    private int[] allowed_item_widths = {16, 24, 32, 48, 64, 96, 128, 256, 512};
     public int width_increment { get; set; default = 6; }
     public bool fixed_item_widths { get; set; default = true;}
 
@@ -332,6 +332,17 @@ public class View : Gtk.Overlay {
         return layout_handler.selected_data.to_array ();
     }
 
+    public int[] get_allowed_widths () {
+        var allowed_widths = new int[allowed_item_widths.length];
+        int index = 0;
+        foreach (int i in allowed_item_widths) {
+            allowed_widths[index] = i;
+            index++;
+        }
+
+        return allowed_widths;
+    }
+
     public void set_allowed_widths (int[] widths) {
         if (widths.length > 0) {
             allowed_item_widths = new int[widths.length];
@@ -354,7 +365,7 @@ public class View : Gtk.Overlay {
                 index++;
             }
 
-            item_width_index = item_width_index.clamp (0, allowed_item_widths.length - 1);
+            item_width = item_width - 1;
         }
     }
 }

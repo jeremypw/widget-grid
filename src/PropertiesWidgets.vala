@@ -71,4 +71,28 @@ public class ValueSwitch : Gtk.Switch {
         );
     }
 }
+
+public class ValueStringCombo : Gtk.ComboBoxText {
+    public ValueStringCombo (string[] strings, string current_string) {
+        Object ();
+
+        int index = 0;
+        bool current_in_list = false;
+        foreach (string s in strings) {
+            if (current_string == s) {
+                current_in_list = true;
+                set_active (index);
+            }
+            append (index.to_string (), s);
+            index++;
+        }
+
+        if (!current_in_list) {
+            prepend (index.to_string (), current_string);
+            set_active (0);
+        }
+
+        show_all ();
+    }
+}
 }

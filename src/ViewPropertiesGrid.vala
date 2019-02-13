@@ -34,7 +34,7 @@ public class ViewPropertiesGrid : Gtk.Grid {
         var vpad_klabel = new KeyLabel ("Row Padding");
         var vpad_scale = new ValueIntScale (12, 72, 6, view.vpadding);
 
-        var fixed_item_widths_klabel = new KeyLabel ("Fixed allowed widths");
+        var fixed_item_widths_klabel = new KeyLabel ("Fix widths");
         var fixed_item_widths_switch = new ValueSwitch (view.fixed_item_widths);
 
         var item_width_klabel = new KeyLabel ("Item width request");
@@ -42,6 +42,16 @@ public class ViewPropertiesGrid : Gtk.Grid {
 
         var item_width_increment_klabel = new KeyLabel ("Width request step");
         var width_increment_scale = new ValueIntScale (1, 8, 1, view.width_increment);
+
+        var fixed_widths_array_klabel = new KeyLabel ("Allowed widths array");
+        string[] width_arrays = {"24, 48, 64", "48, 96, 256", "16, 32, 48, 64, 128, 256, 512"};
+        var sb = new StringBuilder ("");
+        foreach (int i in view.get_allowed_widths ()) {
+            sb.append (i.to_string () + ", ");
+        }
+
+        sb.truncate (sb.len - 2);
+        var fixed_widths_array_combo = new ValueStringCombo (width_arrays, sb.str);
 
         attach (path_klabel, 0, 0, 1, 1);
         attach_next_to (path_vlabel, path_klabel, Gtk.PositionType.RIGHT, 1, 1);
@@ -55,6 +65,8 @@ public class ViewPropertiesGrid : Gtk.Grid {
         attach_next_to (item_width_scale, item_width_klabel, Gtk.PositionType.RIGHT, 1, 1);
         attach (item_width_increment_klabel, 0, 5, 1, 1);
         attach_next_to (width_increment_scale, item_width_increment_klabel, Gtk.PositionType.RIGHT, 1, 1);
+        attach (fixed_widths_array_klabel, 0, 6, 1, 1);
+        attach_next_to (fixed_widths_array_combo, fixed_widths_array_klabel, Gtk.PositionType.RIGHT, 1, 1);
 
         hpad_scale.value_changed.connect (() => {
             hpadding_changed ((int)(hpad_scale.get_value ()));
@@ -81,6 +93,21 @@ public class ViewPropertiesGrid : Gtk.Grid {
         });
 
         fixed_item_widths_switch.set_state (view.fixed_item_widths);
+
+        fixed_widths_array_combo.changed.connect (() => {
+            var txt = fixed_widths_array_combo.get_active_text ();
+            var width_text_array = txt.split (",");
+            var width_array = new int[width_text_array.length];
+            int index = 0;
+            foreach (string s in width_text_array) {
+                int i = int.parse(s).clamp (view.minimum_item_width, view.maximum_item_width);
+                width_array[index] = i;
+                index++;
+            }
+
+            view.set_allowed_widths (width_array);
+        });
+
         show_all ();
     }
 
