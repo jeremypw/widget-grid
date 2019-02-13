@@ -25,8 +25,8 @@ public interface PositionHandler : Object {
     public abstract Gee.AbstractList<Item> widget_pool { get; construct; }
     public abstract WidgetGrid.Model<WidgetData> model { get; construct; }
 
-    public abstract int vpadding { get; set; default = 24;}
-    public abstract int hpadding { get; set; default = 12;}
+    public abstract int vpadding { get; set; }
+    public abstract int hpadding { get; set; }
     public abstract int cols { get; set; }
     public abstract int item_width { get; set; }
     public int column_width {

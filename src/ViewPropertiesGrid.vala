@@ -29,10 +29,10 @@ public class ViewPropertiesGrid : Gtk.Grid {
         var path_vlabel = new ValueLabel (view_path);
 
         var hpad_klabel = new KeyLabel ("Column Padding");
-        var hpad_scale = new ValueIntScale (6, 60, 6, view.hpadding);
+        var hpad_scale = new ValueIntScale (12, 72, 6, view.hpadding);
 
         var vpad_klabel = new KeyLabel ("Row Padding");
-        var vpad_scale = new ValueIntScale (6, 60, 6, view.vpadding);
+        var vpad_scale = new ValueIntScale (12, 72, 6, view.vpadding);
 
         attach (path_klabel, 0, 0, 1, 1);
         attach_next_to (path_vlabel, path_klabel, Gtk.PositionType.RIGHT, 1, 1);

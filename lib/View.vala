@@ -19,22 +19,27 @@
 /*** WidgetGrid.View handles layout and scrollbar, adding items to and sorting the model, and reacting
      to some user input. The details of laying out the widgets in a grid, scrolling and zooming them is
      passed off to the WidgetGrid.LayoutHandler.
-*
-     View is under an EventBox in order to capture events before they reach the displayed widgets to allow
+
+     An Overlay as used as a base in order that the scrollbar does not trigger a reflow by expanding when hovered.
+
+     The layout is under an EventBox in order to capture events before they reach the displayed widgets to allow
      rubberbanding and to emit special signals depending on where the event occured (on item or on background).
      It is up to the App to deal with these signals appropriately, e.g. by displaying a context menu.
 ***/
 namespace WidgetGrid {
 
-public class View : Gtk.EventBox {
+public class View : Gtk.Overlay {
     private static int total_items_added = 0; /* Used to ID data; only ever increases */
     private const int MIN_ITEM_WIDTH = 32;
     private const int MAX_ITEM_WIDTH = 512;
+    private const int DEFAULT_HPADDING = 12;
+    private const int DEFAULT_VPADDING = 24;
 
     private const double SCROLL_SENSITIVITY = 0.5; /* The scroll delta required to move the grid position by one step */
     private const double ZOOM_SENSITIVITY = 1.0; /* The scroll delta required to change the item width by one step */
 
     private Gtk.Layout layout;
+    private Gtk.EventBox event_box;
     private LayoutHandler layout_handler;
 
     public Model<WidgetData>model {get; set construct; }
@@ -73,25 +78,21 @@ public class View : Gtk.EventBox {
         }
     }
 
-    public int hpadding { get; set; default = 6; }
-    public int vpadding { get; set; default = 6; }
+    public int hpadding { get; set; }
+    public int vpadding { get; set; }
 
     public signal void selection_changed ();
     public signal void item_clicked (Item item, Gdk.EventButton event);
     public signal void background_clicked (Gdk.EventButton event);
 
     construct {
-        set_above_child (true);
-
-        var grid = new Gtk.Grid ();
-        grid.hexpand = true;
-        grid.vexpand = true;
-        grid.orientation = Gtk.Orientation.HORIZONTAL;
         item_width_index = 3;
 
+        event_box = new Gtk.EventBox ();
+        event_box.set_above_child (true);
+
         layout = new Gtk.Layout ();
-        layout.hexpand = true;
-        layout.vexpand = true;
+        layout.margin_start = 24; /* So that background always available */
         layout.can_focus = true;
 
         layout_handler = new LayoutHandler (layout, factory, model);
@@ -100,25 +101,30 @@ public class View : Gtk.EventBox {
         bind_property ("hpadding", layout_handler, "hpadding", BindingFlags.DEFAULT);
         bind_property ("vpadding", layout_handler, "vpadding", BindingFlags.DEFAULT);
 
+        /* Need to assign after binding */
+        hpadding = DEFAULT_HPADDING;
+        vpadding = DEFAULT_VPADDING;
+
         var scrollbar = new Gtk.Scrollbar (Gtk.Orientation.VERTICAL, layout_handler.vadjustment);
         scrollbar.set_slider_size_fixed (true);
+        scrollbar.halign = Gtk.Align.END;
 
-        grid.add (layout);
-        grid.add (scrollbar);
-        add (grid);
+        event_box.add (layout);
+        add (event_box);
+        add_overlay (scrollbar);
 
         size_allocate.connect (() => {
             layout_handler.configure ();
         });
 
-        add_events (Gdk.EventMask.SCROLL_MASK |
+        event_box.add_events (Gdk.EventMask.SCROLL_MASK |
                     Gdk.EventMask.SMOOTH_SCROLL_MASK |
                     Gdk.EventMask.BUTTON_PRESS_MASK |
                     Gdk.EventMask.BUTTON_RELEASE_MASK |
                     Gdk.EventMask.POINTER_MOTION_MASK
         );
 
-        scroll_event.connect ((event) => {
+        event_box.scroll_event.connect ((event) => {
             if ((event.state & Gdk.ModifierType.CONTROL_MASK) == 0) { /* Control key not pressed */
                 return handle_scroll (event);
             } else {
@@ -126,11 +132,11 @@ public class View : Gtk.EventBox {
             }
         });
 
-        key_press_event.connect (on_key_press_event);
+        event_box.key_press_event.connect (on_key_press_event);
 
-        button_press_event.connect ((event) => {
-            int x = (int)(event.x);
-            int y = (int)(event.y);
+        event_box.button_press_event.connect ((event) => {
+            int x = (int)(event.x) - layout.margin_start;
+            int y = (int)(event.y) - layout.margin_top;
 
             var item = layout_handler.get_item_at_pos (x, y);
             var on_item = item != null;
@@ -147,7 +153,7 @@ public class View : Gtk.EventBox {
             }
         });
 
-        button_release_event.connect ((event) => {
+        event_box.button_release_event.connect ((event) => {
             layout_handler.end_rubber_banding ();
         });
 
@@ -156,7 +162,7 @@ public class View : Gtk.EventBox {
             return false;
         });
 
-        motion_notify_event.connect ((event) => {
+        event_box.motion_notify_event.connect ((event) => {
             if ((event.state & Gdk.ModifierType.BUTTON1_MASK) > 0) {
                 layout_handler.do_rubber_banding (event);
             }

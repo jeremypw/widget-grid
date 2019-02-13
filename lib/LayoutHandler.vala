@@ -41,8 +41,8 @@ private class LayoutHandler : Object, PositionHandler, SelectionHandler {
     public Gtk.Layout layout { get; construct; }
 
     /* PositionHandler properties */
-    public int vpadding { get; set; default = 24;}
-    public int hpadding { get; set; default = 12;}
+    public int vpadding { get; set; }
+    public int hpadding { get; set; }
     public int item_width { get; set; }
     public int cols { get; set; }
     public WidgetGrid.Model<WidgetData> model { get; construct; }
@@ -65,9 +65,6 @@ private class LayoutHandler : Object, PositionHandler, SelectionHandler {
         frame = new SelectionFrameRectangle ();
 
         vadjustment.value_changed.connect (on_adjustment_value_changed);
-
-        hpadding = 12;
-        vpadding = 24;
 
         model.n_items_changed.connect ((change) => {
             n_items += change;
@@ -191,7 +188,7 @@ private class LayoutHandler : Object, PositionHandler, SelectionHandler {
             return;
         }
 
-        cols = layout.get_allocated_width () / column_width;
+        cols = (layout.get_allocated_width ()) / column_width;
 
         if (cols == 0) {
             return;
@@ -213,9 +210,9 @@ private class LayoutHandler : Object, PositionHandler, SelectionHandler {
             highest_displayed_widget_index = 0;
             pool_size = 0;
             max_val = (double)(total_rows + 1);
+            vadjustment.configure (val, min_val, max_val, step_increment, page_increment, page_size);
         }
 
-        vadjustment.configure (val, min_val, max_val, step_increment, page_increment, page_size);
         on_adjustment_value_changed ();
     }
 
