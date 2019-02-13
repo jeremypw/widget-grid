@@ -124,9 +124,8 @@ private class LayoutHandler : Object, PositionHandler, SelectionHandler {
         previous_first_displayed_row_height = row_height;
         widget_index = first_displayed_widget_index;
 
-        int y = - (int)offset;
+        int y = 0;
         int r;
-
         for (r = 0; y < layout.get_allocated_height () + offset && data_index < n_items; r++) {
             if (r > row_data.size - 1) {
                 row_data.add (new RowData ());
@@ -134,7 +133,7 @@ private class LayoutHandler : Object, PositionHandler, SelectionHandler {
 
             row_data[r].update (data_index, widget_index, y, row_height);
 
-            int x = hpadding;
+            int x = 0;
             for (int c = 0; c < cols && data_index < n_items; c++) {
                 var item = widget_pool[widget_index];
                 int xx = x + hpadding;
@@ -146,7 +145,7 @@ private class LayoutHandler : Object, PositionHandler, SelectionHandler {
                     layout.put (item, xx, yy);
                 }
 
-                item.set_size_request (item_width, row_height - 2 * hpadding);
+                item.set_size_request (item_width, row_height - 2 * vpadding);
 
                 x += column_width;
 
@@ -156,7 +155,7 @@ private class LayoutHandler : Object, PositionHandler, SelectionHandler {
                 data_index++;
             }
 
-            y += row_height;
+            y += row_height + vpadding;
             row_height = get_row_height (widget_index, data_index);
         }
 
@@ -198,26 +197,26 @@ private class LayoutHandler : Object, PositionHandler, SelectionHandler {
             return;
         }
 
+        var first_displayed_row = previous_first_displayed_data_index / cols;
+        var val = first_displayed_row;
+
+        var min_val = 0.0;
+        var max_val = (double)(total_rows + 1);
+        var step_increment = 0.05;
+        var page_increment = 1.0;
+        var page_size = 5.0;
+
         var new_total_rows = (n_items) / cols + 1;
         if (total_rows != new_total_rows) {
             clear_layout ();
-
             total_rows = new_total_rows;
-
-            var first_displayed_row = previous_first_displayed_data_index / cols;
-
             highest_displayed_widget_index = 0;
             pool_size = 0;
-
-            var val = first_displayed_row;
-            var min_val = 0.0;
-            var max_val = (double)(total_rows + 1);
-            var step_increment = 0.05;
-            var page_increment = 1.0;
-            var page_size = 5.0;
-            vadjustment.configure (val, min_val, max_val, step_increment, page_increment, page_size);
-            on_adjustment_value_changed ();
+            max_val = (double)(total_rows + 1);
         }
+
+        vadjustment.configure (val, min_val, max_val, step_increment, page_increment, page_size);
+        on_adjustment_value_changed ();
     }
 
     /* This implements an accelerating scroll rate during a continuous smooth scroll with touchpad

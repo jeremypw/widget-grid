@@ -40,7 +40,6 @@ public class View : Gtk.EventBox {
     public Model<WidgetData>model {get; set construct; }
     public AbstractItemFactory factory { get; construct; }
 
-
     public int[] allowed_item_widths = {16, 24, 32, 48, 64, 96, 128, 256, 512};
     public int width_increment { get; set; default = 6; }
     public int minimum_item_width { get; set; default = MIN_ITEM_WIDTH; }

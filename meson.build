@@ -55,7 +55,9 @@ executable (
     'src/DemoItemFactory.vala',
     'src/SimpleSortedListModel.vala',
     'src/AppMenu.vala',
-    'src/PropertiesGrid.vala',
+    'src/FilePropertiesGrid.vala',
+    'src/ViewPropertiesGrid.vala',
+    'src/PropertiesWidgets.vala',
 
     dependencies : [
         dependency ('gtk+-3.0'),

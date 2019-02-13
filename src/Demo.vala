@@ -53,7 +53,10 @@ public class DemoWindow : Gtk.ApplicationWindow {
     private Model model;
     GOF.Directory.Async dir;
 
+    public string view_path { get; construct; }
+
     construct {
+        view_path = "/usr/share/applications";
         var app_menu = new AppMenu ();
         top_menu = new Gtk.HeaderBar ();
         top_menu.pack_end (app_menu);
@@ -74,7 +77,7 @@ public class DemoWindow : Gtk.ApplicationWindow {
     private void populate_view (View view, int copies) {
         GLib.File dirfile;
         /* This adds about 128 * n icon items to the view */
-        dirfile = GLib.File.new_for_commandline_arg ("/usr/share/applications");
+        dirfile = GLib.File.new_for_commandline_arg (view_path);
         dir = GOF.Directory.Async.from_gfile (dirfile);
         n_copies = copies;
         dir.done_loading.connect (on_done_loading);
@@ -193,7 +196,7 @@ public class DemoWindow : Gtk.ApplicationWindow {
         var grid = new Gtk.Grid ();
         grid.orientation = Gtk.Orientation.VERTICAL;
         grid.margin = 12;
-        grid.add (new PropertiesGrid (((DemoItem)(item)).file));
+        grid.add (new FilePropertiesGrid (((DemoItem)(item)).file));
 
         var button = new Gtk.Button.with_label ("Close Item Context Menu");
         button.margin = 12;
@@ -213,12 +216,31 @@ public class DemoWindow : Gtk.ApplicationWindow {
         var rect = Gdk.Rectangle () {x = x, y = y, width = 1, height = 1};
         popover.set_pointing_to (rect);
 
-        var button = new Gtk.Button.with_label ("Close Background Context Menu");
+        var grid = new Gtk.Grid ();
+        grid.orientation = Gtk.Orientation.VERTICAL;
+        grid.hexpand = true;
+        grid.margin = 12;
+
+        var property_grid = new ViewPropertiesGrid (view_path, view);
+        property_grid.hpadding_changed.connect ((new_hpad) => {
+            view.hpadding = new_hpad;
+        });
+
+        property_grid.vpadding_changed.connect ((new_vpad) => {
+            view.vpadding = new_vpad;
+        });
+
+        grid.add (property_grid);
+
+        var button = new Gtk.Button.with_label ("Close Item Context Menu");
+        button.margin = 12;
         button.halign = Gtk.Align.END;
         button.hexpand = false;
         button.clicked.connect (() => {popover.popdown ();});
 
-        popover.add (button);
+        grid.add (button);
+
+        popover.add (grid);
         popover.show_all ();
         popover.popup ();
     }

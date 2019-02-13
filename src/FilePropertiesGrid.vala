@@ -17,7 +17,7 @@
 ***/
 
 namespace WidgetGrid {
-public class PropertiesGrid : Gtk.Grid {
+public class FilePropertiesGrid : Gtk.Grid {
     public GOF.File file { get; construct; }
 
     construct {
@@ -67,31 +67,8 @@ public class PropertiesGrid : Gtk.Grid {
         show_all ();
     }
 
-    public PropertiesGrid (GOF.File file) {
+    public FilePropertiesGrid (GOF.File file) {
         Object (file: file);
-    }
-}
-
-public class KeyLabel : Gtk.Label {
-    public KeyLabel (string label) {
-        Object (halign: Gtk.Align.END,
-                label: label,
-                valign: Gtk.Align.BASELINE,
-                margin: 6);
-
-        get_style_context ().add_class (Granite.STYLE_CLASS_H2_LABEL);
-    }
-}
-
-public class ValueLabel : Gtk.Label {
-    public ValueLabel (string label) {
-        Object (can_focus: true,
-                halign: Gtk.Align.START,
-                valign: Gtk.Align.BASELINE,
-                label: label
-        );
-
-        get_style_context ().add_class (Granite.STYLE_CLASS_H3_LABEL);
     }
 }
 }

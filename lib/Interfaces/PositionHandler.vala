@@ -31,7 +31,7 @@ public interface PositionHandler : Object {
     public abstract int item_width { get; set; }
     public int column_width {
         get {
-            return item_width + hpadding + vpadding;
+            return item_width + hpadding + hpadding;
         }
     }
 
