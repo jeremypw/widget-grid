@@ -31,7 +31,7 @@ public interface PositionHandler : Object {
     public abstract int item_width { get; set; }
     public int column_width {
         get {
-            return item_width + hpadding + hpadding;
+            return item_width + hpadding;
         }
     }
 
@@ -41,10 +41,19 @@ public interface PositionHandler : Object {
 
     public bool get_row_col_at_pos (int x, int y, out int row, out int col) {
         bool on_item = true;
-        double cc = double.min ((double)(cols), (double)x / (double)column_width);
-        double x_offset = (cc - (int)cc) * column_width;
+        row = 0;
+        col = 0;
 
-        if (x_offset < hpadding || x_offset > hpadding + item_width) {
+        double cc = (double)(x - hpadding) / (double)column_width;
+        double x_offset;
+        if (cc > (double)(cols)) {
+            x_offset = -1;
+            cc = cols - 1;
+        } else {
+            x_offset = (cc - (int)cc) * column_width;
+        }
+
+        if (x_offset < 0 || x_offset > item_width) {
             on_item = false;
         }
 
@@ -59,7 +68,7 @@ public interface PositionHandler : Object {
         }
 
         var y_offset = y - row_data[index].y;
-        if (y_offset < vpadding || y_offset > row_data[index].height - vpadding) {
+        if (y_offset < 0 || y_offset > row_data[index].height) {
             on_item = false;
         }
 
@@ -76,19 +85,21 @@ public interface PositionHandler : Object {
        return widget_pool[(row_data[row].first_widget_index + col)];
     }
 
-    public virtual Item? get_item_at_pos (int x, int y) {
+    public virtual Item? get_item_at_pos (Gdk.Point p) {
         int r = 0;
         int c = 0;
         Item? item = null;
 
-        if (get_row_col_at_pos (x, y, out r, out c)) {
+        if (get_row_col_at_pos (p.x, p.y, out r, out c)) {
             item = get_item_at_row_col (r, c);
         }
 
         return item;
     }
 
-    /** @index is the index of the last item on the previous row (or -1 for the first row) **/
+    /** @index is the index of the last item on the previous row (or -1 for the first row).
+        The row height is the largest height request of the widgets in the row
+    **/
     protected virtual int get_row_height (int widget_index, int data_index) { /* widgets previous updated */
         var max_h = 0;
 
@@ -109,7 +120,7 @@ public interface PositionHandler : Object {
             data_index++;
         }
 
-        return max_h + 2 * vpadding;
+        return max_h;
     }
 }
 }

@@ -135,10 +135,9 @@ public class View : Gtk.Overlay {
         event_box.key_press_event.connect (on_key_press_event);
 
         event_box.button_press_event.connect ((event) => {
-            int x = (int)(event.x) - layout.margin_start;
-            int y = (int)(event.y) - layout.margin_top;
 
-            var item = layout_handler.get_item_at_pos (x, y);
+
+            var item = layout_handler.get_item_at_pos (get_corrected_event_position (event));
             var on_item = item != null;
 
             if (event.button == Gdk.BUTTON_PRIMARY &&
@@ -294,6 +293,14 @@ public class View : Gtk.Overlay {
         } else {
             item_width -= width_increment;
         }
+    }
+
+    private Gdk.Point get_corrected_event_position (Gdk.EventButton event) {
+        var point = Gdk.Point ();
+        point.x = (int)(event.x) - layout.margin_start;
+        point.y = (int)(event.y);
+
+        return point;
     }
 
     public override bool draw (Cairo.Context ctx) {

@@ -121,7 +121,7 @@ private class LayoutHandler : Object, PositionHandler, SelectionHandler {
         previous_first_displayed_row_height = row_height;
         widget_index = first_displayed_widget_index;
 
-        int y = 0;
+        int y = vpadding - (int)offset;
         int r;
         for (r = 0; y < layout.get_allocated_height () + offset && data_index < n_items; r++) {
             if (r > row_data.size - 1) {
@@ -130,21 +130,19 @@ private class LayoutHandler : Object, PositionHandler, SelectionHandler {
 
             row_data[r].update (data_index, widget_index, y, row_height);
 
-            int x = 0;
+            int x = hpadding;
             for (int c = 0; c < cols && data_index < n_items; c++) {
                 var item = widget_pool[widget_index];
-                int xx = x + hpadding;
-                int yy = y + vpadding - (int)offset;
 
                 if (item.get_parent () != null) {
-                    layout.move (item, xx, yy);
+                    layout.move (item, x, y);
                 } else {
-                    layout.put (item, xx, yy);
+                    layout.put (item, x, y);
                 }
 
                 item.set_size_request (item_width, row_height - 2 * vpadding);
 
-                x += column_width;
+                x += item_width + hpadding;
 
                 last_displayed_data_index = data_index;
                 highest_displayed_widget_index = int.max (highest_displayed_widget_index, widget_index);
