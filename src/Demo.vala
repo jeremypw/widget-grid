@@ -50,7 +50,7 @@ public class App : Gtk.Application {
 public class DemoWindow : Gtk.ApplicationWindow {
     private Gtk.HeaderBar top_menu;
     private View view;
-    private Model model;
+    private Model<DemoItemData> model;
     GOF.Directory.Async dir;
 
     public string view_path { get; construct; }
@@ -91,7 +91,7 @@ public class DemoWindow : Gtk.ApplicationWindow {
     private void on_file_loaded (GOF.File file) {
         file.update_icon (view.item_width, 1);
         var data = new DemoItemData (file);
-        view.add_data (data);
+//        model.add (data);
     }
 
     private int load_count = 0;
@@ -110,12 +110,12 @@ public class DemoWindow : Gtk.ApplicationWindow {
     }
 
     private View make_simple_view () {
-        model = new SimpleModel ();
+        model = new SimpleModel<DemoItemData> ();
         return new View (new DemoItemFactory (), model);
     }
 
     private View make_simple_sorted_view () {
-        model = new SimpleSortableListModel ();
+        model = new SimpleSortableListModel<DemoItemData> ();
         return new View (new DemoItemFactory (), model);
     }
 

@@ -62,7 +62,7 @@ public class DemoItem : Gtk.EventBox, Item {
         }
     }
 
-    public int data_id {
+    public uint64 data_id {
         get {
             return data != null ? data.data_id : -1;
         }

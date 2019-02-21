@@ -23,7 +23,7 @@
      the SelectionHandler interface
 ***/
 namespace WidgetGrid {
-private class LayoutHandler : Object, PositionHandler, SelectionHandler {
+public class LayoutHandler : Object, PositionHandler, SelectionHandler {
     private const int REFLOW_DELAY_MSEC = 100;
     private const int MAX_WIDGETS = 1000;
 
@@ -31,10 +31,12 @@ private class LayoutHandler : Object, PositionHandler, SelectionHandler {
     private int previous_first_displayed_data_index = 0;
     private int previous_first_displayed_row_height = 0;
     private int n_widgets = 0;
+
+    private int total_rows = 0;
     private int first_displayed_widget_index = 0;
     private int highest_displayed_widget_index = 0;
-    private int total_rows = 0;
-    private int n_items = 0;
+    public int first_displayed_data_index { get; private set; default = 0; }
+    public int last_displayed_data_index { get; private set; default = 0; }
 
     public Gtk.Adjustment vadjustment { get; construct; }
     public AbstractItemFactory factory { get; construct; }
@@ -44,14 +46,16 @@ private class LayoutHandler : Object, PositionHandler, SelectionHandler {
     public int vpadding { get; set; }
     public int hpadding { get; set; }
     public int item_width { get; set; }
-    public int cols { get; set; }
+    public int cols { get; protected set; }
+    public int n_items { get; protected set; default = 0; }
+
     public WidgetGrid.Model<WidgetData> model { get; construct; }
     public Gee.AbstractList<Item> widget_pool { get; construct; }
     public Gee.AbstractList<RowData> row_data { get; set; }
 
     /* SelectionHandler interface properties */
     public SelectionFrame frame { get; construct; }
-    public Gee.TreeSet<WidgetData> selected_data { get; construct; }
+    public Gee.TreeSet<WidgetData> selected_data { get; set; }
     public bool rubber_banding { get; set; default = false; }
     public bool can_rubber_band { get; set; default = true; }
     public bool deselect_before_rubber_band { get; set; default = true; }
@@ -97,8 +101,20 @@ private class LayoutHandler : Object, PositionHandler, SelectionHandler {
         );
     }
 
+    public void show_data_index (int index, bool use_align, float yalign) { /* Only align rows */
+        return_if_fail (cols > 0);
+
+        var row_containing_index = index / cols;
+        var n_displayed_items_approx = last_displayed_data_index - first_displayed_data_index + 1;
+        var n_rows_displayed_approx = n_displayed_items_approx / cols + 1;
+        var rows_to_offset = (int)((double)n_rows_displayed_approx * (double)yalign);
+        var first_row = row_containing_index - rows_to_offset;
+
+        vadjustment.set_value ((double)first_row);
+    }
+
     protected void position_items (int first_displayed_row, double offset) {
-        int data_index, widget_index, row_height, last_displayed_data_index, first_displayed_data_index;
+        int data_index, widget_index, row_height;
 
         data_index = first_displayed_row * cols;
 

@@ -22,11 +22,11 @@
 ***/
 
 namespace WidgetGrid {
-public class SimpleModel : Object, Model<WidgetData> {
+public class SimpleModel<WidgetData> : Object, Model<WidgetData> {
     private Vala.ArrayList<WidgetData> list;
 
     construct {
-        list = new Vala.ArrayList<WidgetData> (WidgetData.equal);
+        list = new Vala.ArrayList<WidgetData> ();
     }
 
     public bool add (WidgetData data) {
@@ -56,7 +56,11 @@ public class SimpleModel : Object, Model<WidgetData> {
         return res;
     }
 
-    public WidgetData lookup_index (int index) {
+    public WidgetData? lookup_index (int index) {
+        if (index < 0 || index >= list.size) {
+            return null;
+        }
+
         return list[index];
     }
 

@@ -28,7 +28,29 @@
 ***/
 namespace WidgetGrid {
 
-public class View : Gtk.Overlay {
+public interface ViewInterface : Gtk.Widget {
+    public abstract Model<WidgetData>model {get; set construct; }
+
+    public abstract int minimum_item_width { get; set; }
+    public abstract int maximum_item_width { get; set; }
+    public abstract int item_width_index { get; set; }
+    public abstract int width_increment { get; set; }
+    public abstract bool fixed_item_widths { get; set; }
+    public abstract int item_width { get; set; }
+    public abstract int hpadding { get; set; }
+    public abstract int vpadding { get; set; }
+
+    public abstract bool get_visible_range_indices (out int first, out int last);
+    public abstract void select_index (int index);
+    public abstract void unselect_index (int index);
+
+    public signal void selection_changed ();
+    public signal void item_clicked (Item item, Gdk.EventButton event);
+    public signal void background_clicked (Gdk.EventButton event);
+
+}
+
+public class View : Gtk.Overlay, ViewInterface {
     private static int total_items_added = 0; /* Used to ID data; only ever increases */
     private const int DEFAULT_HPADDING = 12;
     private const int DEFAULT_VPADDING = 24;
@@ -38,7 +60,6 @@ public class View : Gtk.Overlay {
 
     private Gtk.Layout layout;
     private Gtk.EventBox event_box;
-    private LayoutHandler layout_handler;
 
     public int minimum_item_width { get; set; default = 16; }
     public int maximum_item_width { get; set; default = 512; }
@@ -63,6 +84,7 @@ public class View : Gtk.Overlay {
 
     public Model<WidgetData>model {get; set construct; }
     public AbstractItemFactory factory { get; construct; }
+    public LayoutHandler layout_handler {get; set construct; }
 
     private int[] allowed_item_widths = {16, 24, 32, 48, 64, 96, 128, 256, 512};
     public int width_increment { get; set; default = 6; }
@@ -100,10 +122,6 @@ public class View : Gtk.Overlay {
 
     public int hpadding { get; set; }
     public int vpadding { get; set; }
-
-    public signal void selection_changed ();
-    public signal void item_clicked (Item item, Gdk.EventButton event);
-    public signal void background_clicked (Gdk.EventButton event);
 
     construct {
         item_width_index = 3;
@@ -150,14 +168,16 @@ public class View : Gtk.Overlay {
             } else {
                 return handle_zoom (event);
             }
+
+            return false;
         });
 
         event_box.key_press_event.connect (on_key_press_event);
 
         event_box.button_press_event.connect ((event) => {
-
-
-            var item = layout_handler.get_item_at_pos (get_corrected_event_position (event));
+            layout.grab_focus ();
+            Gdk.Point wp = {0, 0};
+            var item = layout_handler.get_item_at_pos (get_corrected_event_position (event), out wp);
             var on_item = item != null;
 
             if (event.button == Gdk.BUTTON_PRIMARY &&
@@ -170,10 +190,13 @@ public class View : Gtk.Overlay {
             } else {
                 background_clicked (event);
             }
+
+            return false;
         });
 
         event_box.button_release_event.connect ((event) => {
             layout_handler.end_rubber_banding ();
+            return false;
         });
 
         delete_event.connect (() => {
@@ -183,7 +206,9 @@ public class View : Gtk.Overlay {
 
         event_box.motion_notify_event.connect ((event) => {
             if ((event.state & Gdk.ModifierType.BUTTON1_MASK) > 0) {
-                layout_handler.do_rubber_banding (event);
+                if (layout_handler.do_rubber_banding (event)) {
+                    selection_changed ();
+                }
             }
 
             return false;
@@ -194,14 +219,8 @@ public class View : Gtk.Overlay {
 
     public View (AbstractItemFactory _factory, Model<WidgetData>? _model = null) {
         Object (factory: _factory,
-                model: _model != null ? _model : new SimpleModel ()
+                model: _model != null ? _model : new SimpleModel<WidgetData> ()
         );
-    }
-
-    public void add_data (WidgetData data) {
-        data.data_id = View.total_items_added;
-        model.add (data);
-        View.total_items_added++;
     }
 
     public void sort (CompareDataFunc? func) {
@@ -237,6 +256,13 @@ public class View : Gtk.Overlay {
         }
 
         return false;
+    }
+
+    public bool get_visible_range_indices (out int first, out int last) {
+        first = layout_handler.first_displayed_data_index;
+        last = layout_handler.last_displayed_data_index;
+
+        return first >= 0 && last >= 0;
     }
 
     private double total_delta_y = 0.0;
@@ -316,9 +342,17 @@ public class View : Gtk.Overlay {
     }
 
     private Gdk.Point get_corrected_event_position (Gdk.EventButton event) {
+        return get_corrected_position ((int)(event.x), (int)(event.y));
+    }
+
+    private Gdk.Point get_corrected_p (Gdk.Point p) {
+        return get_corrected_position (p.x, p.y);
+    }
+
+    private Gdk.Point get_corrected_position (int x, int y) {
         var point = Gdk.Point ();
-        point.x = (int)(event.x) - layout.margin_start;
-        point.y = (int)(event.y);
+        point.x = x - layout.margin_start;
+        point.y = y - layout.margin_top;
 
         return point;
     }
@@ -370,6 +404,91 @@ public class View : Gtk.Overlay {
             }
 
             item_width = item_width - 1;
+        }
+    }
+
+    public void select_all () {
+        layout_handler.select_all_data ();
+    }
+
+    public void unselect_all () {
+        layout_handler.clear_selection ();
+    }
+
+    public Item? get_item_at_coords (int x, int y, out Gdk.Point corrected_p) {
+        Gdk.Point wp = {0, 0};
+        Gdk.Point p = {x, y};
+        var item = layout_handler.get_item_at_pos (get_corrected_p (p), out wp);
+
+        corrected_p = wp;
+
+        return item;
+    }
+
+    public Item? get_item_at_pos (Gdk.Point p, out Gdk.Point corrected_p) {
+        Gdk.Point wp = {0, 0};
+        var item = layout_handler.get_item_at_pos (get_corrected_p (p), out wp);
+        corrected_p = wp;
+
+        return item;
+    }
+
+    public int get_index_at_pos (Gdk.Point p) {
+        return layout_handler.get_index_at_pos (get_corrected_p (p));
+    }
+
+    public int get_index_at_coords (int x, int y) {
+        return get_index_at_pos ({x, y});
+    }
+
+    public WidgetData? get_data_at_pos (Gdk.Point p) {
+        return layout_handler.get_data_at_pos (get_corrected_p (p));
+    }
+
+    public WidgetData? get_data_coords (int x, int y) {
+        Gdk.Point p = {x, y};
+        return get_data_at_pos (get_corrected_p (p));
+    }
+
+    public int get_n_columns () {
+        return layout_handler.cols;
+    }
+
+    public int index_below (int index) {
+        index += layout_handler.cols;
+        if (index < 0 || index > layout_handler.n_items) {
+            return -1;
+        } else {
+            return index;
+        }
+    }
+
+    public int index_above (int index) {
+        index -= layout_handler.cols;
+        if (index < 0 || index > layout_handler.n_items) {
+            return -1;
+        } else {
+            return index;
+        }
+    }
+
+    public new bool has_focus {
+        get {
+            return layout.has_focus;
+        }
+    }
+
+    public void select_index (int index) {
+
+        if (layout_handler.select_index (index)) {
+            selection_changed ();
+        }
+    }
+
+    public void unselect_index (int index) {
+
+        if (layout_handler.unselect_index (index)) {
+            selection_changed ();
         }
     }
 }
