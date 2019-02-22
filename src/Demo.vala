@@ -67,15 +67,21 @@ public class DemoWindow : Gtk.ApplicationWindow {
         resizable = true;
 
         change_view (ViewType.SIMPLE);
-        view.set_allowed_widths ({24, 64, 128});
-        view.minimum_item_width = 16;
-        view.maximum_item_width = 512;
-        show_all ();
 
-        app_menu.change_view.connect (change_view);
+        realize.connect (() => {
+            populate_view ();
+        });
+
+        app_menu.change_view.connect ((type) => {
+            change_view (type);
+            populate_view ();
+        });
+
+        show_all ();
     }
 
-    private void populate_view (WidgetGrid.View view, int copies) {
+    int copies = 1;
+    private void populate_view () {
         GLib.File dirfile;
         /* This adds about 128 * n icon items to the view */
         dirfile = GLib.File.new_for_commandline_arg (view_path);
@@ -125,11 +131,11 @@ public class DemoWindow : Gtk.ApplicationWindow {
             remove (view);
             view.destroy ();
         } else {
-            width = 129;
+            width = 64;
         }
 
         var subtitle = "Simple Unsorted View";
-        int copies = 1;
+        copies = 1;
         switch (type) {
             case ViewType.SIMPLE_SORTED:
                 view = make_simple_sorted_view ();
@@ -167,7 +173,6 @@ public class DemoWindow : Gtk.ApplicationWindow {
         view.item_clicked.connect (on_view_item_clicked);
         view.background_clicked.connect (on_view_background_clicked);
         view.item_width = width;
-        populate_view (view, copies);
         view.show_all ();
         add (view);
     }
