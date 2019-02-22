@@ -116,8 +116,23 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
 
         add (frame);
 
-        button_press_event.connect (() => {
-            warning ("button press %s", item_name);
+        add_events (Gdk.EventMask.BUTTON_PRESS_MASK);
+
+        button_press_event.connect ((event) => {
+
+            var e_win = event.get_window ();
+            int x = (int)(event.x);
+            int y = (int)(event.y);
+
+            if (e_win != this.get_window ()) {
+                convert_coords (e_win, x, y, out x, out y);
+            }
+
+            var zone = get_zone  ({x, y});
+
+            if (zone == FM.ClickZone.HELPER) {
+                data.is_selected = !data.is_selected;
+            }
             return false;
         });
 
@@ -157,12 +172,10 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
             file.update_icon (size, 1);
         }
 
-        /* Temporary */
-        if (pix == null) {
-            icon.set_from_icon_name ("icon-missing", Gtk.IconSize.SMALL_TOOLBAR);
-        } else {
+        Idle.add (() => {
             icon.set_from_pixbuf (pix);
-        }
+            return false;
+        });
 
         return true;
     }
@@ -219,6 +232,20 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
         }
 
         return base.draw (cr);
+    }
+
+    private void convert_coords (Gdk.Window source_win, int x, int y, out int _x, out int _y) {
+        var win = this.get_window ();
+        int sox, soy, dox, doy;
+
+        win.get_origin (out dox, out doy);
+        source_win.get_origin (out sox, out soy);
+
+        int dx = dox - sox;
+        int dy = doy - soy;
+
+        _x = x - dx;
+        _y = y - dy;
     }
 }
 }

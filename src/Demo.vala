@@ -73,8 +73,6 @@ public class DemoWindow : Gtk.ApplicationWindow {
         show_all ();
 
         app_menu.change_view.connect (change_view);
-        view.item_clicked.connect (on_view_item_clicked);
-        view.background_clicked.connect (on_view_background_clicked);
     }
 
     private void populate_view (WidgetGrid.View view, int copies) {
@@ -127,7 +125,7 @@ public class DemoWindow : Gtk.ApplicationWindow {
             remove (view);
             view.destroy ();
         } else {
-            width = 64;
+            width = 129;
         }
 
         var subtitle = "Simple Unsorted View";
@@ -166,6 +164,8 @@ public class DemoWindow : Gtk.ApplicationWindow {
         top_menu.set_title ("WidgetGrid Demo");
         top_menu.set_subtitle (subtitle);
 
+        view.item_clicked.connect (on_view_item_clicked);
+        view.background_clicked.connect (on_view_background_clicked);
         view.item_width = width;
         populate_view (view, copies);
         view.show_all ();
