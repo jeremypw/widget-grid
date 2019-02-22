@@ -16,7 +16,7 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
-/*** WidgetGrid.WidgetData is the base class for objects stored by WidgetGrid.Model.
+/*** WidgetGrid.DataInterface is the base class for objects stored by WidgetGrid.Model.
      The data contained herein is used to dynamically update widgets used for display
      by WidgetGrid.View.
 ***/

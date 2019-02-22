@@ -49,7 +49,7 @@ public class LayoutHandler : Object, PositionHandler, SelectionHandler {
     public int cols { get; protected set; }
     public int n_items { get; protected set; default = 0; }
 
-    public WidgetGrid.Model model { get; construct; }
+    public WidgetGrid.Model<DataInterface> model { get; construct; }
     public Gee.AbstractList<Item> widget_pool { get; construct; }
     public Gee.AbstractList<RowData> row_data { get; set; }
 
@@ -93,7 +93,7 @@ public class LayoutHandler : Object, PositionHandler, SelectionHandler {
         });
     }
 
-    public LayoutHandler (Gtk.Layout _layout, AbstractItemFactory _factory, WidgetGrid.Model _model) {
+    public LayoutHandler (Gtk.Layout _layout, AbstractItemFactory _factory, WidgetGrid.Model<DataInterface> _model) {
         Object (
             layout: _layout,
             factory: _factory,

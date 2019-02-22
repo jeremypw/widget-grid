@@ -23,7 +23,7 @@ namespace WidgetGrid {
 public interface PositionHandler : Object {
     public abstract Gee.AbstractList<RowData> row_data { get; set; }
     public abstract Gee.AbstractList<Item> widget_pool { get; construct; }
-    public abstract WidgetGrid.Model model { get; construct; }
+    public abstract WidgetGrid.Model<DataInterface> model { get; construct; }
     public abstract int n_items { get; protected set; default = 0; }
 
     public abstract int vpadding { get; set; }

@@ -50,7 +50,7 @@ public class App : Gtk.Application {
 public class DemoWindow : Gtk.ApplicationWindow {
     private Gtk.HeaderBar top_menu;
     private WidgetGrid.View view;
-    private WidgetGrid.Model model;
+    private WidgetGrid.Model<WidgetGrid.DataInterface> model;
     GOF.Directory.Async dir;
 
     public string view_path { get; construct; }

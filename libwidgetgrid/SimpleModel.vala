@@ -22,7 +22,7 @@
 ***/
 
 namespace WidgetGrid {
-public class SimpleModel : Object, Model {
+public class SimpleModel : Object, Model<DataInterface> {
     private Vala.ArrayList<DataInterface> list;
 
     construct {
@@ -56,7 +56,7 @@ public class SimpleModel : Object, Model {
         return res;
     }
 
-    public DataInterface? lookup_index (int index) {
+    public DataInterface lookup_index (int index) {
         if (index < 0 || index >= list.size) {
             return null;
         }

@@ -29,7 +29,7 @@
 namespace WidgetGrid {
 
 public interface ViewInterface : Gtk.Widget {
-    public abstract Model model {get; set construct; }
+    public abstract Model<DataInterface> model {get; set construct; }
 
     public abstract int minimum_item_width { get; set; }
     public abstract int maximum_item_width { get; set; }
@@ -82,7 +82,7 @@ public class View : Gtk.Overlay, ViewInterface {
         }
     }
 
-    public Model model {get; set construct; }
+    public Model<DataInterface> model {get; set construct; }
     public AbstractItemFactory factory { get; construct; }
     public LayoutHandler layout_handler {get; set construct; }
 

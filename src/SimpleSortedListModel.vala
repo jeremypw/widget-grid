@@ -19,7 +19,7 @@
 /*** A demo WidgetGrid.Model which is sortable.
 ***/
 namespace WidgetGridDemo {
-public class SimpleSortableListModel : Object, WidgetGrid.Model {
+public class SimpleSortableListModel : Object, WidgetGrid.Model<WidgetGrid.DataInterface> {
     private Gee.LinkedList<WidgetGrid.DataInterface> list;
 
     construct {
@@ -62,7 +62,7 @@ public class SimpleSortableListModel : Object, WidgetGrid.Model {
         return res;
     }
 
-    public WidgetGrid.DataInterface? lookup_index (int index) {
+    public WidgetGrid.DataInterface lookup_index (int index) {
         return (WidgetGrid.DataInterface?)(list.@get (index));
     }
 
