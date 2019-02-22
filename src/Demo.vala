@@ -22,7 +22,7 @@
      Model that is sortable to use with the View.  IT is possible to choose the size of the model
      to show that there is little difference in speed of View facilities even with large models.
 ***/
-namespace WidgetGrid {
+namespace WidgetGridDemo {
 public enum ViewType {
     SIMPLE,
     SIMPLE_LARGE_MODEL,
@@ -49,8 +49,8 @@ public class App : Gtk.Application {
 
 public class DemoWindow : Gtk.ApplicationWindow {
     private Gtk.HeaderBar top_menu;
-    private View view;
-    private Model<DemoItemData> model;
+    private WidgetGrid.View view;
+    private WidgetGrid.Model model;
     GOF.Directory.Async dir;
 
     public string view_path { get; construct; }
@@ -77,7 +77,7 @@ public class DemoWindow : Gtk.ApplicationWindow {
         view.background_clicked.connect (on_view_background_clicked);
     }
 
-    private void populate_view (View view, int copies) {
+    private void populate_view (WidgetGrid.View view, int copies) {
         GLib.File dirfile;
         /* This adds about 128 * n icon items to the view */
         dirfile = GLib.File.new_for_commandline_arg (view_path);
@@ -91,7 +91,7 @@ public class DemoWindow : Gtk.ApplicationWindow {
     private void on_file_loaded (GOF.File file) {
         file.update_icon (view.item_width, 1);
         var data = new DemoItemData (file);
-//        model.add (data);
+        model.add (data);
     }
 
     private int load_count = 0;
@@ -102,21 +102,21 @@ public class DemoWindow : Gtk.ApplicationWindow {
             dir.init ();
             return;
         } else {
-            view.sort ((CompareDataFunc?)(WidgetData.compare_data_func));
+            view.sort ((CompareDataFunc?)(WidgetGrid.DataInterface.compare_data_func));
             top_menu.subtitle = top_menu.subtitle + " - %i items".printf (model.get_n_items ());
             dir.done_loading.disconnect (on_done_loading);
             dir.file_loaded.disconnect (on_file_loaded);
         }
     }
 
-    private View make_simple_view () {
-        model = new SimpleModel<DemoItemData> ();
-        return new View (new DemoItemFactory (), model);
+    private WidgetGrid.View make_simple_view () {
+        model = new WidgetGrid.SimpleModel ();
+        return new WidgetGrid.View (new IconGridItemFactory (), model);
     }
 
-    private View make_simple_sorted_view () {
-        model = new SimpleSortableListModel<DemoItemData> ();
-        return new View (new DemoItemFactory (), model);
+    private WidgetGrid.View make_simple_sorted_view () {
+        model = new SimpleSortableListModel ();
+        return new WidgetGrid.View (new IconGridItemFactory (), model);
     }
 
     private void change_view (ViewType type) {
@@ -172,7 +172,7 @@ public class DemoWindow : Gtk.ApplicationWindow {
         add (view);
     }
 
-    private void on_view_item_clicked (Item item, Gdk.EventButton event) {
+    private void on_view_item_clicked (WidgetGrid.Item item, Gdk.EventButton event) {
         switch (event.button) {
             case Gdk.BUTTON_PRIMARY:
                 item.button_press_event (event);
@@ -193,13 +193,13 @@ public class DemoWindow : Gtk.ApplicationWindow {
         }
     }
 
-    private void show_item_context_menu (Item item, WidgetData[] selected) {
+    private void show_item_context_menu (WidgetGrid.Item item, WidgetGrid.DataInterface[] selected) {
         var popover = new Gtk.Popover (item);
 
         var grid = new Gtk.Grid ();
         grid.orientation = Gtk.Orientation.VERTICAL;
         grid.margin = 12;
-        grid.add (new FilePropertiesGrid (((DemoItem)(item)).file));
+        grid.add (new FilePropertiesGrid (((IconGridItem)(item)).file));
 
         var button = new Gtk.Button.with_label ("Close Item Context Menu");
         button.margin = 12;
@@ -251,7 +251,7 @@ public class DemoWindow : Gtk.ApplicationWindow {
 }
 
 public static int main (string[] args) {
-    var app = new WidgetGrid.App ();
+    var app = new WidgetGridDemo.App ();
     return app.run (args);
 }
 

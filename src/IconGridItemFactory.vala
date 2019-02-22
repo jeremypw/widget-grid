@@ -16,18 +16,14 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
-/*** WidgetGrid.WidgetData is the base class for objects stored by WidgetGrid.Model.
-     The data contained herein is used to dynamically update widgets used for display
-     by WidgetGrid.View.
+/*** WidgetGrid.AbstractItemFactory is the basis for a class that generates WidgetGrid.Items on
+     demand.  The factory can supply any widget that implements the WidgetGrid.Item interface.
+     The definition of the Item class is usually contained within the ItemFactory.
 ***/
-namespace WidgetGrid {
-public class WidgetData : Object, DataInterface {
-    public uint64 data_id { get; construct; }
-    public bool is_selected { get; set; default = false; }
-
-    construct {
-        data_id = get_monotonic_time ();
+namespace WidgetGridDemo {
+public class IconGridItemFactory : WidgetGrid.AbstractItemFactory {
+    public override WidgetGrid.Item new_item () {
+        return new IconGridItem ();
     }
 }
 }
-

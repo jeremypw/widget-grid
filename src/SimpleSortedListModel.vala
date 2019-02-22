@@ -18,15 +18,15 @@
 
 /*** A demo WidgetGrid.Model which is sortable.
 ***/
-namespace WidgetGrid {
-public class SimpleSortableListModel<WidgetData> : Object, Model<WidgetData> {
-    private Gee.LinkedList<WidgetData> list;
+namespace WidgetGridDemo {
+public class SimpleSortableListModel : Object, WidgetGrid.Model {
+    private Gee.LinkedList<WidgetGrid.DataInterface> list;
 
     construct {
-        list = new Gee.LinkedList<WidgetData> ();
+        list = new Gee.LinkedList<WidgetGrid.DataInterface> ();
     }
 
-    public bool add (WidgetData data) {
+    public bool add (WidgetGrid.DataInterface data) {
         var res = list.add (data);
         if (res) {
             n_items_changed (1);
@@ -44,7 +44,7 @@ public class SimpleSortableListModel<WidgetData> : Object, Model<WidgetData> {
         return true;
     }
 
-    public bool remove_data (WidgetData data) {
+    public bool remove_data (WidgetGrid.DataInterface data) {
         var res = list.remove (data);
         if (res) {
             n_items_changed (-1);
@@ -62,11 +62,11 @@ public class SimpleSortableListModel<WidgetData> : Object, Model<WidgetData> {
         return res;
     }
 
-    public WidgetData lookup_index (int index) {
-        return (WidgetData)(list.@get (index));
+    public WidgetGrid.DataInterface? lookup_index (int index) {
+        return (WidgetGrid.DataInterface?)(list.@get (index));
     }
 
-    public int lookup_data (WidgetData data) {
+    public int lookup_data (WidgetGrid.DataInterface data) {
         return list.index_of (data);
     }
 

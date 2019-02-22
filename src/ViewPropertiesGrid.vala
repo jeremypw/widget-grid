@@ -16,10 +16,10 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
-namespace WidgetGrid {
+namespace WidgetGridDemo {
 public class ViewPropertiesGrid : Gtk.Grid {
     public string view_path { get; construct; }
-    public View view { get; construct; }
+    public WidgetGrid.View view { get; construct; }
 
     public signal void hpadding_changed (int new_hpad);
     public signal void vpadding_changed (int new_vpad);
@@ -120,7 +120,7 @@ public class ViewPropertiesGrid : Gtk.Grid {
         show_all ();
     }
 
-    public ViewPropertiesGrid (string path, View view) {
+    public ViewPropertiesGrid (string path, WidgetGrid.View view) {
         Object (view_path: path,
                 view: view);
     }

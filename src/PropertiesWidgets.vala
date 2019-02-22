@@ -15,7 +15,7 @@
 
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
-namespace WidgetGrid {
+namespace WidgetGridDemo {
 public class KeyLabel : Gtk.Label {
     public KeyLabel (string label) {
         Object (halign: Gtk.Align.END,

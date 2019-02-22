@@ -21,13 +21,14 @@ widgetgrid_lib = shared_library (
     'Interfaces/PositionHandler.vala',
     'Interfaces/Item.vala',
     'Interfaces/Model.vala',
+    'Interfaces/DataInterface.vala',
     'View.vala',
     'AbstractItemFactory.vala',
-    'WidgetData.vala',
     'SimpleModel.vala',
     'LayoutHandler.vala',
     'SelectionFrameRectangle.vala',
     'RowData.vala',
+    'WidgetData.vala',
 
     dependencies : [
         libwidgetgrid_deps

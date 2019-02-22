@@ -17,7 +17,7 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
-namespace WidgetGrid {
+namespace WidgetGridDemo {
    public class AppMenu : Gtk.MenuButton {
         public signal void change_view (ViewType type);
 

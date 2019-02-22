@@ -19,10 +19,9 @@
 /*** WidgetGrid.Model interface defines the requirements for a model usable with WidgetGrid.View.
 ***/
 namespace WidgetGrid {
-[GenericAccessors]
-public interface Model<G> : Object {
-    public abstract bool add (G data); /* Returns position inserted at (or -1 if not implemented) */
-    public virtual int add_array (G[] data_array) { /* Returns positions inserted at */
+public interface Model : Object {
+    public abstract bool add (DataInterface data); /* Returns position inserted at (or -1 if not implemented) */
+    public virtual int add_array (DataInterface[] data_array) { /* Returns positions inserted at */
         int added = 0;
         var n_items = data_array.length;
         for (int index = 0; index < n_items; index++) {
@@ -35,10 +34,10 @@ public interface Model<G> : Object {
     }
 
     public abstract bool remove_index (int index);
-    public abstract bool remove_data (G data);
+    public abstract bool remove_data (DataInterface data);
 
-    public abstract G lookup_index (int index);
-    public abstract int lookup_data (G data);
+    public abstract DataInterface? lookup_index (int index);
+    public abstract int lookup_data (DataInterface data);
 
     public virtual bool sort (CompareDataFunc func) {
         return false;

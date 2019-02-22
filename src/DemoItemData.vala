@@ -18,16 +18,12 @@
 
 /*** A wrapper that makes a GOF.File object suitable as WidgetData for WidgetGrid.View
 ***/
-namespace WidgetGrid {
-public class DemoItemData : WidgetData {
-    public GOF.File file { get; set;}
+namespace WidgetGridDemo {
+public class DemoItemData : WidgetGrid.WidgetData {
+    public GOF.File file { get; construct; }
 
-    public DemoItemData (GOF.File _file) {
-        file = _file;
-    }
-
-    public override int compare (WidgetData b) {
-        return file.compare_by_display_name (((DemoItemData)b).file);
+    public DemoItemData (GOF.File file) {
+        Object (file: file);
     }
 }
 }

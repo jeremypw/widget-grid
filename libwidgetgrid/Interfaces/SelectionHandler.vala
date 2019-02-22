@@ -29,7 +29,7 @@ public interface SelectionHandler : Object, PositionHandler {
     public abstract bool rubber_banding { get; set; default = false; }
     public abstract bool can_rubber_band { get; set; default = true; }
     public abstract bool deselect_before_rubber_band { get; set; default = true; }
-    public abstract Gee.TreeSet<WidgetData> selected_data { get; set; }
+    public abstract Gee.TreeSet<DataInterface> selected_data { get; set; }
 
     public abstract Gtk.Widget get_widget ();
 

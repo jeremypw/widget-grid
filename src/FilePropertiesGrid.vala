@@ -16,7 +16,7 @@
     Authors: Jeremy Wootten <jeremy@elementaryos.org>
 ***/
 
-namespace WidgetGrid {
+namespace WidgetGridDemo {
 public class FilePropertiesGrid : Gtk.Grid {
     public GOF.File file { get; construct; }
 
