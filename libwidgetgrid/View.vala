@@ -244,6 +244,7 @@ public class View : Gtk.Overlay, ViewInterface {
 
     public void sort (CompareDataFunc? func) {
         model.sort (func);
+        layout_handler.cursor_invalidated ();
         queue_draw ();
     }
 
@@ -267,6 +268,13 @@ public class View : Gtk.Overlay, ViewInterface {
             switch (event.keyval) {
                 case Gdk.Key.Escape:
                     layout_handler.clear_selection ();
+                    break;
+
+                case Gdk.Key.Up:
+                case Gdk.Key.Down:
+                case Gdk.Key.Left:
+                case Gdk.Key.Right:
+                    layout_handler.handle_cursor_keys (event.keyval);
                     break;
 
                 default:

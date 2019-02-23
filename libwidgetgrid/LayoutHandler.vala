@@ -23,7 +23,7 @@
      the SelectionHandler interface
 ***/
 namespace WidgetGrid {
-public class LayoutHandler : Object, PositionHandler, SelectionHandler {
+public class LayoutHandler : Object, PositionHandler, SelectionHandler, CursorHandler {
     private const int REFLOW_DELAY_MSEC = 100;
     private const int MAX_WIDGETS = 1000;
 
@@ -61,6 +61,8 @@ public class LayoutHandler : Object, PositionHandler, SelectionHandler {
     public int item_width { get; set; }
     public int cols { get; protected set; }
     public int n_items { get; protected set; default = 0; }
+    public DataInterface data_at_cursor { get; set; }
+    public int cursor_index { get; set; default = -1;}
 
     public WidgetGrid.Model<DataInterface> model { get; construct; }
     public Gee.AbstractList<Item> widget_pool { get; construct; }
@@ -208,6 +210,10 @@ public class LayoutHandler : Object, PositionHandler, SelectionHandler {
                 if (column_width > 0) {
                     cols = (layout.get_allocated_width ()) / column_width;
                     if (cols > 0) {
+                        if (cursor_index < 0) {
+                           initialize_cursor ();
+                        }
+
                         var first_displayed_row = previous_first_displayed_data_index / cols;
                         var val = first_displayed_row;
 

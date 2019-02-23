@@ -69,6 +69,7 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
     }
 
     public bool is_selected { get {return data != null ? data.is_selected : false;} }
+    public bool is_cursor_position { get {return data != null ? data.is_cursor_position : false;} }
     public uint64 data_id { get {return data != null ? data.data_id : -1;} }
     public GOF.File? file { get { return data != null ? ((DemoItemData)data).file : null; } }
 
@@ -233,6 +234,14 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
         } else {
             grid.unset_state_flags (Gtk.StateFlags.SELECTED);
         }
+
+        if (is_selected) {
+            grid.set_state_flags (Gtk.StateFlags.FOCUSED, false);
+        } else {
+            grid.unset_state_flags (Gtk.StateFlags.FOCUSED);
+        }
+
+        helper.visible = is_cursor_position;
 
         return base.draw (cr);
     }

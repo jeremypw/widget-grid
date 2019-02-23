@@ -60,5 +60,18 @@ public interface Item : Gtk.Widget {
             return data != null ? data.data_id : -1;
         }
     }
+
+    public bool is_cursor_position {
+        get {
+            return data != null ? data.is_cursor_position : false;
+        }
+
+        set {
+            if (data != null) {
+                data.is_cursor_position = value;
+                update_item (data);
+            }
+        }
+    }
 }
 }
