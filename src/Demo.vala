@@ -57,6 +57,7 @@ public class DemoWindow : Gtk.ApplicationWindow {
 
     construct {
         view_path = "/usr/share/applications";
+//        view_path = "/media/jeremy/Shared/jeremy/Test Folder/WidgetGridTest/";
         var app_menu = new AppMenu ();
         top_menu = new Gtk.HeaderBar ();
         top_menu.pack_end (app_menu);

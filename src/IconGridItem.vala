@@ -168,14 +168,17 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
     }
 
     public bool get_new_pix (int size) {
+        if (size < 16) {
+            size = 16;
+        }
+
+        icon.set_size_request (size, size);
+
         if (file != null) {
             file.update_icon (size, 1);
         }
 
-        Idle.add (() => {
-            icon.set_from_pixbuf (pix);
-            return false;
-        });
+        icon.set_from_pixbuf (pix);
 
         return true;
     }
@@ -188,8 +191,8 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
         }
     }
 
-    public bool set_max_width (int width) {
-        if (width != set_max_width_request) {
+    public bool set_max_width (int width, bool force = false) {
+        if (width != set_max_width_request || force) {
             get_new_pix (width - total_padding);
             set_max_width_request = width;
         }
@@ -203,7 +206,7 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
         assert (_data is DemoItemData);
         data = _data;
         label.label = item_name;
-        set_max_width_request = 0;
+        set_max_width (set_max_width_request, true);
     }
 
     /** The point supplied must be in widget coordinates **/

@@ -22,7 +22,9 @@
 namespace WidgetGrid {
 public interface Item : Gtk.Widget {
     public abstract DataInterface? data { get; set; default = null; }
-    public abstract bool set_max_width (int width);
+
+    /** After calling this, the correct height request for the widget is expected to be available **/
+    public abstract bool set_max_width (int width, bool force = false);
 
     private static int _max_height;
     public static int max_height { get { return _max_height; } set { _max_height = value; } default = 256;}

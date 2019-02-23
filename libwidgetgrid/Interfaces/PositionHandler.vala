@@ -37,7 +37,6 @@ public interface PositionHandler : Object {
     }
 
     protected abstract void position_items (int first_displayed_row, double offset);
-    protected abstract void update_item_with_data (Item item, DataInterface data);
     protected abstract int next_widget_index (int current_index);
 
     public bool get_row_col_at_pos (int x, int y, out int row, out int col, out Gdk.Point widget_p) {
@@ -166,6 +165,7 @@ public interface PositionHandler : Object {
             }
 
             update_item_with_data (item, data);
+            item.set_max_width (item_width);
 
             int min_h, nat_h, min_w, nat_w;
             item.get_preferred_width (out min_w, out nat_w);
@@ -175,11 +175,22 @@ public interface PositionHandler : Object {
                 max_h = nat_h;
             }
 
+            if (min_w > item_width + hpadding) {
+                item_width = min_w - hpadding;
+            }
+
             widget_index = next_widget_index (widget_index);
             data_index++;
         }
 
         return max_h;
     }
+
+    private void update_item_with_data (Item item, DataInterface data) {
+        if (item.data_id != data.data_id) {
+            item.update_item (data);
+        }
+    }
+
 }
 }
