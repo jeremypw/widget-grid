@@ -39,8 +39,8 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
     private static int _min_height;
     public static int min_height { get { return _min_height; } set { _min_height = value; } default = 16;}
 
-    private const Gtk.IconSize default_helper_size = Gtk.IconSize.LARGE_TOOLBAR;
-    private const Gtk.IconSize focused_helper_size = Gtk.IconSize.DIALOG;
+    private const Gtk.IconSize default_helper_size = Gtk.IconSize.SMALL_TOOLBAR;
+    private const Gtk.IconSize focused_helper_size = Gtk.IconSize.LARGE_TOOLBAR;
 
     static construct {
         WidgetGrid.Item.min_height = 16;
@@ -84,7 +84,7 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
         frame.show_all ();
 
         grid = new Gtk.Grid ();
-        grid.margin_start = grid.margin_end = 12;
+        grid.margin = 2;
         grid.orientation = Gtk.Orientation.VERTICAL;
         grid.halign = Gtk.Align.CENTER;
         grid.valign = Gtk.Align.CENTER;
@@ -96,6 +96,7 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
 
         label = new Gtk.Label (item_name);
         label.halign = Gtk.Align.CENTER;
+        label.vexpand = true;
         label.margin_top = label.margin_bottom = 6;
         label.set_line_wrap (true);
         label.set_line_wrap_mode (Pango.WrapMode.WORD_CHAR);
@@ -120,18 +121,11 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
 
         add (frame);
 
-        add_events (Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.ENTER_NOTIFY_MASK );
+        add_events (Gdk.EventMask.BUTTON_PRESS_MASK);
 
         button_press_event.connect ((event) => {
-
-            var e_win = event.get_window ();
             int x = (int)(event.x);
             int y = (int)(event.y);
-
-            if (e_win != this.get_window ()) {
-                convert_coords (e_win, x, y, out x, out y);
-            }
-
             var zone = get_zone  ({x, y});
 
             if (zone == FM.ClickZone.HELPER) {
@@ -140,11 +134,6 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
             }
 
             return false;
-        });
-
-        enter_notify_event.connect (() => {
-            data.is_cursor_position = true;
-            update_state ();
         });
 
         overlay.get_child_position.connect (on_get_child_position);
@@ -171,8 +160,8 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
         frame.get_allocation (out w_alloc);
         allocation.x = w_alloc.x;
         allocation.y = w_alloc.y;
-        allocation.width = 16;
-        allocation.height = 16;
+        allocation.width = 24;
+        allocation.height = 24;
 
         helper_allocation = (Gdk.Rectangle)allocation;
         return true;
@@ -260,18 +249,12 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
         helper.visible = is_cursor_position || is_selected;
     }
 
-    private void convert_coords (Gdk.Window source_win, int x, int y, out int _x, out int _y) {
-        var win = this.get_window ();
-        int sox, soy, dox, doy;
+    public void left () {
+        update_state ();
+    }
 
-        win.get_origin (out dox, out doy);
-        source_win.get_origin (out sox, out soy);
-
-        int dx = dox - sox;
-        int dy = doy - soy;
-
-        _x = x - dx;
-        _y = y - dy;
+    public void hovered (Gdk.EventMotion event) {
+        update_state ();
     }
 }
 }

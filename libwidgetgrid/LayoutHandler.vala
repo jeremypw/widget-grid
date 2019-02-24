@@ -33,8 +33,8 @@ public class LayoutHandler : Object, PositionHandler, SelectionHandler, CursorHa
     private int n_widgets = 0;
 
     private int total_rows = 0;
-    private int first_displayed_widget_index = 0;
-    private int last_displayed_widget_index = 0;
+    public int first_displayed_widget_index { get; set; default = 0;}
+    public int last_displayed_widget_index { get; set; default = 0;}
 
 
     private uint32 last_event_time = 0;
@@ -65,8 +65,8 @@ public class LayoutHandler : Object, PositionHandler, SelectionHandler, CursorHa
     public int cursor_index { get; set; default = -1;}
 
     public WidgetGrid.Model<DataInterface> model { get; construct; }
-    public Gee.AbstractList<Item> widget_pool { get; construct; }
-    public Gee.AbstractList<RowData> row_data { get; set; }
+    public Gee.ArrayList<Item> widget_pool { get; construct; }
+    public Gee.ArrayList<RowData> row_data { get; set; }
 
     /* SelectionHandler interface properties */
     public SelectionFrame frame { get; construct; }
@@ -132,10 +132,24 @@ public class LayoutHandler : Object, PositionHandler, SelectionHandler, CursorHa
         vadjustment.set_value ((double)first_row);
     }
 
+    public void apply_to_visible_items (WidgetFunc func) {
+        Item item;
+        int index = first_displayed_widget_index;
+        do {
+            item = widget_pool[index];
+            func (item);
+            if (index == last_displayed_widget_index) {
+                break;
+            } else {
+                index = next_widget_index (index);
+            }
+        } while (true);
+    }
+
     public void refresh () {
-        for (int i = first_displayed_widget_index; i <= last_displayed_widget_index; i++) {
-            widget_pool[i].update_item ();
-        }
+        apply_to_visible_items ((item) => {
+            item.update_item ();
+        });
     }
 
     protected void position_items (int first_displayed_row, double offset) {
@@ -189,7 +203,7 @@ public class LayoutHandler : Object, PositionHandler, SelectionHandler, CursorHa
                 x += item_width + hpadding;
 
                 last_displayed_data_index = data_index;
-                last_displayed_widget_index = int.max (last_displayed_widget_index, widget_index);
+                last_displayed_widget_index = widget_index;
                 widget_index = next_widget_index (widget_index);
                 data_index++;
             }
@@ -302,9 +316,11 @@ public class LayoutHandler : Object, PositionHandler, SelectionHandler, CursorHa
             offset = row_fraction * previous_first_displayed_row_height;
         }
 
-        /* Reposition items when idle */
+        position_items (first_displayed_row, offset);
         Idle.add (() => {
-            position_items (first_displayed_row, offset);
+            if (rubber_banding) {
+                mark_selected_in_rectangle (false);
+            }
             return false;
         });
 

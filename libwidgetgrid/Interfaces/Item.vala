@@ -23,6 +23,8 @@
 *     the WidgetGrid often replaces the data object when items are repositioned.
 ***/
 namespace WidgetGrid {
+public delegate void WidgetFunc (Item item);
+
 public interface Item : Gtk.Widget {
     public abstract DataInterface data { get; set; default = null; }
 
@@ -76,5 +78,8 @@ public interface Item : Gtk.Widget {
             }
         }
     }
+
+    public virtual void left () {}
+    public virtual void hovered (Gdk.EventMotion event) {}
 }
 }

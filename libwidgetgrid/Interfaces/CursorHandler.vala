@@ -112,6 +112,10 @@ public interface CursorHandler : Object, PositionHandler {
         layout.queue_draw ();
     }
 
+    public void set_cursor (int index) {
+        update_cursor (index);
+    }
+
     public virtual void initialize_cursor () {
         if (n_items > 0) {
             update_cursor (0);

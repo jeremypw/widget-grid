@@ -21,8 +21,11 @@
 ***/
 namespace WidgetGrid {
 public interface PositionHandler : Object {
-    public abstract Gee.AbstractList<RowData> row_data { get; set; }
-    public abstract Gee.AbstractList<Item> widget_pool { get; construct; }
+    public abstract Gee.ArrayList<RowData> row_data { get; set; }
+    public abstract Gee.ArrayList<Item> widget_pool { get; construct; }
+    public abstract int first_displayed_widget_index { get; set; default = 0;}
+    public abstract int last_displayed_widget_index { get; set; default = 0;}
+
     public abstract WidgetGrid.Model<DataInterface> model { get; construct; }
     public abstract int n_items { get; protected set; default = 0; }
 
@@ -39,8 +42,26 @@ public interface PositionHandler : Object {
     protected abstract void position_items (int first_displayed_row, double offset);
     protected abstract int next_widget_index (int current_index);
 
+    public int index_below (int index) {
+        index += cols;
+        if (index < 0 || index > n_items) {
+            return -1;
+        } else {
+            return index;
+        }
+    }
+
+    public int index_above (int index) {
+        index -= cols;
+        if (index < 0 || index > n_items) {
+            return -1;
+        } else {
+            return index;
+        }
+    }
+
     public bool get_row_col_at_pos (int x, int y, out int row, out int col, out Gdk.Point widget_p) {
-        bool on_item = true;
+        bool on_item_cell = true;
         row = 0;
         col = 0;
         int wx = -1;
@@ -61,7 +82,7 @@ public interface PositionHandler : Object {
         }
 
         if (x_offset < 0 || x_offset > item_width) {
-            on_item = false;
+            on_item_cell = false;
         } else {
             wx = (int)x_offset;
         }
@@ -78,7 +99,7 @@ public interface PositionHandler : Object {
 
         var y_offset = y - row_data[index].y;
         if (y_offset < 0 || y_offset > row_data[index].height) {
-            on_item = false;
+            on_item_cell = false;
         } else {
             wy = (int)y_offset;
         }
@@ -87,7 +108,7 @@ public interface PositionHandler : Object {
         col = (int)cc;
         widget_p = {wx, wy};
 
-        return on_item;
+        return on_item_cell;
     }
 
     public virtual int get_index_at_row_col (int row, int col) {
@@ -148,6 +169,13 @@ public interface PositionHandler : Object {
 
         corrected_p = wp;
 
+        if (item != null) {
+            var p_rect = Gdk.Rectangle () {x = corrected_p.x, y = corrected_p.y, width = 1, height = 1};
+            if (!item.intersect (p_rect)) {
+                item = null;
+            }
+        }
+
         return item;
     }
 
@@ -181,6 +209,11 @@ public interface PositionHandler : Object {
 
             widget_index = next_widget_index (widget_index);
             data_index++;
+        }
+
+        for (int c = 0; c < cols && data_index < model.get_n_items (); c++) {
+            var item = widget_pool[widget_index];
+            item.set_size_request (-1, max_h);
         }
 
         return max_h;
