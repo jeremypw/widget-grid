@@ -51,7 +51,6 @@ public interface ViewInterface : Gtk.Widget {
 }
 
 public class View : Gtk.Overlay, ViewInterface {
-    private static int total_items_added = 0; /* Used to ID data; only ever increases */
     private const int DEFAULT_HPADDING = 12;
     private const int DEFAULT_VPADDING = 24;
 
@@ -215,6 +214,7 @@ public class View : Gtk.Overlay, ViewInterface {
 
         event_box.button_release_event.connect ((event) => {
             layout_handler.end_rubber_banding ();
+            layout_handler.refresh ();
             return false;
         });
 
@@ -472,11 +472,11 @@ public class View : Gtk.Overlay, ViewInterface {
         return get_index_at_pos ({x, y});
     }
 
-    public DataInterface? get_data_at_pos (Gdk.Point p) {
+    public DataInterface get_data_at_pos (Gdk.Point p) {
         return layout_handler.get_data_at_pos (get_corrected_p (p));
     }
 
-    public DataInterface? get_data_coords (int x, int y) {
+    public DataInterface get_data_coords (int x, int y) {
         Gdk.Point p = {x, y};
         return get_data_at_pos (get_corrected_p (p));
     }

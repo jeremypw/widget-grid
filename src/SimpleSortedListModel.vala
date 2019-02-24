@@ -63,7 +63,7 @@ public class SimpleSortableListModel : Object, WidgetGrid.Model<WidgetGrid.DataI
     }
 
     public WidgetGrid.DataInterface lookup_index (int index) {
-        return (WidgetGrid.DataInterface?)(list.@get (index));
+        return (WidgetGrid.DataInterface)(list.@get (index));
     }
 
     public int lookup_data (WidgetGrid.DataInterface data) {

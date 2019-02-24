@@ -34,7 +34,7 @@ public class LayoutHandler : Object, PositionHandler, SelectionHandler, CursorHa
 
     private int total_rows = 0;
     private int first_displayed_widget_index = 0;
-    private int highest_displayed_widget_index = 0;
+    private int last_displayed_widget_index = 0;
 
 
     private uint32 last_event_time = 0;
@@ -106,6 +106,10 @@ public class LayoutHandler : Object, PositionHandler, SelectionHandler, CursorHa
         notify["item-width"].connect (() => {
             configure ();
         });
+
+        notify["cursor-index"].connect (() => {
+            refresh ();
+        });
     }
 
     public LayoutHandler (Gtk.Layout _layout, AbstractItemFactory _factory, WidgetGrid.Model<DataInterface> _model) {
@@ -128,6 +132,12 @@ public class LayoutHandler : Object, PositionHandler, SelectionHandler, CursorHa
         vadjustment.set_value ((double)first_row);
     }
 
+    public void refresh () {
+        for (int i = first_displayed_widget_index; i <= last_displayed_widget_index; i++) {
+            widget_pool[i].update_item ();
+        }
+    }
+
     protected void position_items (int first_displayed_row, double offset) {
         int data_index, widget_index, row_height;
 
@@ -143,7 +153,7 @@ public class LayoutHandler : Object, PositionHandler, SelectionHandler, CursorHa
         if (previous_first_displayed_data_index != data_index) {
             clear_layout ();
             previous_first_displayed_data_index = data_index;
-            first_displayed_widget_index = data_index % (highest_displayed_widget_index + 1);
+            first_displayed_widget_index = data_index % (last_displayed_widget_index + 1);
         }
 
         first_displayed_data_index = data_index;
@@ -179,7 +189,7 @@ public class LayoutHandler : Object, PositionHandler, SelectionHandler, CursorHa
                 x += item_width + hpadding;
 
                 last_displayed_data_index = data_index;
-                highest_displayed_widget_index = int.max (highest_displayed_widget_index, widget_index);
+                last_displayed_widget_index = int.max (last_displayed_widget_index, widget_index);
                 widget_index = next_widget_index (widget_index);
                 data_index++;
             }
@@ -227,7 +237,7 @@ public class LayoutHandler : Object, PositionHandler, SelectionHandler, CursorHa
                         if (total_rows != new_total_rows) {
                             clear_layout ();
                             total_rows = new_total_rows;
-                            highest_displayed_widget_index = 0;
+                            last_displayed_widget_index = 0;
                             pool_size = 0;
                             max_val = (double)(total_rows + 1);
                             vadjustment.configure (val, min_val, max_val, step_increment, page_increment, page_size);

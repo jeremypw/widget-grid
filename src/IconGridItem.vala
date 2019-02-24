@@ -39,6 +39,9 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
     private static int _min_height;
     public static int min_height { get { return _min_height; } set { _min_height = value; } default = 16;}
 
+    private const Gtk.IconSize default_helper_size = Gtk.IconSize.LARGE_TOOLBAR;
+    private const Gtk.IconSize focused_helper_size = Gtk.IconSize.DIALOG;
+
     static construct {
         WidgetGrid.Item.min_height = 16;
         WidgetGrid.Item.max_height = 256;
@@ -54,7 +57,7 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
     private int set_max_width_request = 0;
     private int total_padding;
 
-    public WidgetGrid.DataInterface? data { get; set; default = null; }
+    public WidgetGrid.DataInterface data { get; set; default = null; }
 
     public Gdk.Pixbuf? pix {
         get {
@@ -81,7 +84,7 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
         frame.show_all ();
 
         grid = new Gtk.Grid ();
-        grid.margin_start = grid.margin_end = 24;
+        grid.margin_start = grid.margin_end = 12;
         grid.orientation = Gtk.Orientation.VERTICAL;
         grid.halign = Gtk.Align.CENTER;
         grid.valign = Gtk.Align.CENTER;
@@ -117,7 +120,7 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
 
         add (frame);
 
-        add_events (Gdk.EventMask.BUTTON_PRESS_MASK);
+        add_events (Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.ENTER_NOTIFY_MASK );
 
         button_press_event.connect ((event) => {
 
@@ -133,8 +136,15 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
 
             if (zone == FM.ClickZone.HELPER) {
                 data.is_selected = !data.is_selected;
+                update_state ();
             }
+
             return false;
+        });
+
+        enter_notify_event.connect (() => {
+            data.is_cursor_position = true;
+            update_state ();
         });
 
         overlay.get_child_position.connect (on_get_child_position);
@@ -203,9 +213,13 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
         return true;
     }
 
-    public void update_item (WidgetGrid.DataInterface? _data) {
-        assert (_data is DemoItemData);
-        data = _data;
+    /** Call with null to refresh from existing data **/
+    public void update_item (WidgetGrid.DataInterface? _data = null) {
+        if (_data != null) {
+            assert (_data is DemoItemData);
+            data = _data;
+        }
+        update_state ();
         label.label = item_name;
         set_max_width (set_max_width_request, true);
     }
@@ -228,22 +242,22 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
         return result;
     }
 
-    public override bool draw (Cairo.Context cr) {
+    private void update_state () {
         if (is_selected) {
             grid.set_state_flags (Gtk.StateFlags.SELECTED, false);
+            helper.set_from_icon_name ("selection-checked", default_helper_size);
         } else {
             grid.unset_state_flags (Gtk.StateFlags.SELECTED);
         }
 
-        if (is_selected) {
-            grid.set_state_flags (Gtk.StateFlags.FOCUSED, false);
+        if (is_cursor_position) {
+            grid.set_state_flags (Gtk.StateFlags.PRELIGHT, false);
+            helper.set_from_icon_name (is_selected ? "selection-remove" : "selection-add", focused_helper_size);
         } else {
-            grid.unset_state_flags (Gtk.StateFlags.FOCUSED);
+            grid.unset_state_flags (Gtk.StateFlags.PRELIGHT);
         }
 
-        helper.visible = is_cursor_position;
-
-        return base.draw (cr);
+        helper.visible = is_cursor_position || is_selected;
     }
 
     private void convert_coords (Gdk.Window source_win, int x, int y, out int _x, out int _y) {

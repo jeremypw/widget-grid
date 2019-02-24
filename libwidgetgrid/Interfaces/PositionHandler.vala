@@ -114,7 +114,7 @@ public interface PositionHandler : Object {
        return model.lookup_index (row_data[row].first_data_index + col);
     }
 
-    public virtual DataInterface? get_data_at_pos (Gdk.Point p) {
+    public virtual DataInterface get_data_at_pos (Gdk.Point p) {
         int row = 0;
         int col = 0;
         Gdk.Point wp = {0, 0};
