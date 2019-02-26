@@ -79,7 +79,7 @@ public interface Item : Gtk.Widget {
         }
     }
 
-    public virtual void left () {}
+    public virtual void leave () {}
     public virtual void hovered (Gdk.EventMotion event) {}
 }
 }

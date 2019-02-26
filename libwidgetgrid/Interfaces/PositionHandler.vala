@@ -29,10 +29,10 @@ public interface PositionHandler : Object {
     public abstract WidgetGrid.Model<DataInterface> model { get; construct; }
     public abstract int n_items { get; protected set; default = 0; }
 
-    public abstract int vpadding { get; set; }
-    public abstract int hpadding { get; set; }
-    public abstract int cols { get; protected set; }
-    public abstract int item_width { get; set; }
+    public abstract int vpadding { get; set; default = 6;}
+    public abstract int hpadding { get; set; default = 6;}
+    public abstract int cols { get; protected set; default = 1;}
+    public abstract int item_width { get; set; default = 48;}
     public int column_width {
         get {
             return item_width + hpadding;
@@ -159,18 +159,16 @@ public interface PositionHandler : Object {
     public virtual Item? get_item_at_pos (Gdk.Point p, out Gdk.Point corrected_p) {
         int r = 0;
         int c = 0;
-        Gdk.Point wp = {0, 0};
+        corrected_p = {0, 0};
 
         Item? item = null;
 
-        if (get_row_col_at_pos (p.x, p.y, out r, out c, out wp)) {
+        if (get_row_col_at_pos (p.x, p.y, out r, out c, out corrected_p)) {
             item = get_item_at_row_col (r, c);
         }
 
-        corrected_p = wp;
-
         if (item != null) {
-            var p_rect = Gdk.Rectangle () {x = corrected_p.x, y = corrected_p.y, width = 1, height = 1};
+            var p_rect = Gdk.Rectangle () {x = p.x, y = p.y, width = 1, height = 1};
             if (!item.intersect (p_rect)) {
                 item = null;
             }

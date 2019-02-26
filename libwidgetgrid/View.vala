@@ -30,6 +30,7 @@ namespace WidgetGrid {
 
 public interface ViewInterface : Gtk.Widget {
     public abstract Model<DataInterface> model {get; set construct; }
+    public abstract LayoutHandler layout_handler {protected get; set construct; }
 
     public abstract int minimum_item_width { get; set; }
     public abstract int maximum_item_width { get; set; }
@@ -39,17 +40,19 @@ public interface ViewInterface : Gtk.Widget {
     public abstract int item_width { get; set; }
     public abstract int hpadding { get; set; }
     public abstract int vpadding { get; set; }
+    public abstract bool handle_cursor_keys { get; set; default = true; }
 
     public abstract bool get_visible_range_indices (out int first, out int last);
     public abstract void select_index (int index);
     public abstract void unselect_index (int index);
 
+
+
     public signal void selection_changed ();
     public signal void item_clicked (Item item, Gdk.EventButton event);
-    public signal void item_left (Item item);
+    public signal void item_leave (Item item);
     public signal void item_hovered (Item item, Gdk.EventMotion event);
     public signal void background_clicked (Gdk.EventButton event);
-
 }
 
 public class View : Gtk.Overlay, ViewInterface {
@@ -66,12 +69,12 @@ public class View : Gtk.Overlay, ViewInterface {
     private int last_height = 0;
 
     private Item? hovered_item = null;
-    private Gdk.Point wp;
+    private Gdk.Point wp; /* Item relative pointer position */
 
     public int minimum_item_width { get; set; default = 32; }
     public int maximum_item_width { get; set; default = 512; }
 
-    private int _item_width_index = 0;
+    private int _item_width_index = 3;
     public int item_width_index {
         get {
             if (fixed_item_widths) {
@@ -91,11 +94,12 @@ public class View : Gtk.Overlay, ViewInterface {
 
     public Model<DataInterface> model {get; set construct; }
     public AbstractItemFactory factory { get; construct; }
-    public LayoutHandler layout_handler {get; set construct; }
+    public LayoutHandler layout_handler {protected get; set construct; }
 
     private int[] allowed_item_widths = {16, 24, 32, 48, 64, 96, 128, 256, 512};
     public int width_increment { get; set; default = 6; }
     public bool fixed_item_widths { get; set; default = true;}
+    public bool handle_cursor_keys { get; set; default = true; }
 
     public int item_width {
         get {
@@ -148,16 +152,15 @@ public class View : Gtk.Overlay, ViewInterface {
 
     construct {
         wp = {0, 0};
-        item_width_index = 3;
-
-        event_box = new Gtk.EventBox ();
-        event_box.set_above_child (true);
 
         layout = new Gtk.Layout ();
         layout.margin_start = 24; /* So that background always available */
         layout.can_focus = true;
 
         layout_handler = new LayoutHandler (layout, factory, model);
+
+        event_box = new Gtk.EventBox ();
+        event_box.set_above_child (true);
 
         /* Need to assign after binding */
         hpadding = DEFAULT_HPADDING;
@@ -230,23 +233,20 @@ public class View : Gtk.Overlay, ViewInterface {
         });
 
         event_box.motion_notify_event.connect ((event) => {
-            var item = layout_handler.get_item_at_pos (get_corrected_position ((int)(event.x), (int)(event.y)), out wp);
+            var cp = get_corrected_position ((int)(event.x), (int)(event.y));
+            var item = layout_handler.get_item_at_pos (cp, out wp);
             var on_item = item != null;
-
             if ((!on_item || layout_handler.rubber_banding) && (event.state & Gdk.ModifierType.BUTTON1_MASK) > 0) {
-                if (layout_handler.do_rubber_banding (event)) {
-                    selection_changed ();
-                }
+                layout_handler.do_rubber_banding (event);
             } else {
                 if (item != hovered_item) {
                     if (hovered_item != null) {
-                        item_left (hovered_item);
+                        item_leave (hovered_item);
                     }
 
                     hovered_item = item;
-                    int index = layout_handler.get_index_at_pos (get_corrected_position ((int)(event.x), (int)(event.y)));
+                    int index = layout_handler.get_index_at_pos (cp);
                     layout_handler.set_cursor (index);
-                    layout_handler.refresh ();
                 }
 
                 if (hovered_item != null) {
@@ -255,9 +255,15 @@ public class View : Gtk.Overlay, ViewInterface {
                     w_event.y = (double)wp.y;
                     item_hovered (hovered_item, w_event);
                 }
+
+                layout_handler.refresh ();
             }
 
             return false;
+        });
+
+        layout_handler.selection_changed.connect (() => {
+            selection_changed ();
         });
 
         show_all ();
@@ -277,6 +283,8 @@ public class View : Gtk.Overlay, ViewInterface {
 
     private bool on_key_press_event (Gdk.EventKey event) {
         var control_pressed = (event.state & Gdk.ModifierType.CONTROL_MASK) != 0;
+        var shift_pressed = (event.state & Gdk.ModifierType.SHIFT_MASK) != 0;
+
         if (control_pressed) {
             switch (event.keyval) {
                 case Gdk.Key.plus:
@@ -291,22 +299,28 @@ public class View : Gtk.Overlay, ViewInterface {
                 default:
                     break;
             }
-        } else {
-            switch (event.keyval) {
-                case Gdk.Key.Escape:
-                    layout_handler.clear_selection ();
-                    break;
+        }
 
-                case Gdk.Key.Up:
-                case Gdk.Key.Down:
-                case Gdk.Key.Left:
-                case Gdk.Key.Right:
-                    layout_handler.handle_cursor_keys (event.keyval);
-                    break;
+        switch (event.keyval) {
+            case Gdk.Key.Escape:
+                layout_handler.clear_selection ();
+                break;
 
-                default:
-                    break;
-            }
+            case Gdk.Key.Up:
+            case Gdk.Key.Down:
+            case Gdk.Key.Left:
+            case Gdk.Key.Right:
+                if (handle_cursor_keys) {
+                    bool linear_select = shift_pressed && !control_pressed;
+                    bool deselect = !control_pressed;
+                    layout_handler.move_cursor (event.keyval, linear_select, deselect);
+                    return true;
+                }
+
+                break;
+
+            default:
+                break;
         }
 
         return false;
@@ -469,20 +483,18 @@ public class View : Gtk.Overlay, ViewInterface {
         layout_handler.clear_selection ();
     }
 
-    public Item? get_item_at_coords (int x, int y, out Gdk.Point corrected_p) {
-        Gdk.Point wp = {0, 0};
-        Gdk.Point p = {x, y};
-        var item = layout_handler.get_item_at_pos (get_corrected_p (p), out wp);
-
-        corrected_p = wp;
+    public Item? get_item_at_coords (int x, int y, out Gdk.Point item_p) {
+        item_p = {0, 0};
+        var cp = get_corrected_p ({x, y});
+        var item = layout_handler.get_item_at_pos (cp, out item_p);
 
         return item;
     }
 
     public Item? get_item_at_pos (Gdk.Point p, out Gdk.Point corrected_p) {
-        Gdk.Point wp = {0, 0};
-        var item = layout_handler.get_item_at_pos (get_corrected_p (p), out wp);
-        corrected_p = wp;
+        Gdk.Point cp = {0, 0};
+        var item = layout_handler.get_item_at_pos (get_corrected_p (p), out cp);
+        corrected_p = cp;
 
         return item;
     }
@@ -523,15 +535,34 @@ public class View : Gtk.Overlay, ViewInterface {
     }
 
     public void select_index (int index) {
-        if (layout_handler.select_data_index (index)) {
-            selection_changed ();
-        }
+        layout_handler.select_data_index (index);
     }
 
     public void unselect_index (int index) {
-        if (layout_handler.unselect_data_index (index)) {
-            selection_changed ();
+        layout_handler.unselect_data_index (index);
+    }
+
+    public int index_at_cursor () {
+        return layout_handler.get_index_at_cursor ();
+    }
+
+    public void set_cursor_index (int index, bool select = false) {
+        layout_handler.set_cursor (index);
+        if (select) {
+            layout_handler.select_data_index (index);
         }
+    }
+
+    public void linear_select_index (int index) {
+        layout_handler.linear_select_index (index);
+    }
+
+    public new void grab_focus () {
+        layout.grab_focus ();
+    }
+
+    public void move_cursor (uint keyval, bool linear_select, bool deselect) {
+        layout_handler.move_cursor (keyval, linear_select, deselect);
     }
 }
 }

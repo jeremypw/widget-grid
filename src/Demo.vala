@@ -181,14 +181,14 @@ public class DemoWindow : Gtk.ApplicationWindow {
     private void connect_view_signals () {
         view.item_clicked.connect (on_view_item_clicked);
         view.background_clicked.connect (on_view_background_clicked);
-        view.item_left.connect (on_view_item_left);
+        view.item_leave.connect (on_view_item_leave);
         view.item_hovered.connect (on_view_item_hovered);
     }
 
     private void disconnect_view_signals () {
         view.item_clicked.disconnect (on_view_item_clicked);
         view.background_clicked.disconnect (on_view_background_clicked);
-        view.item_left.disconnect (on_view_item_left);
+        view.item_leave.disconnect (on_view_item_leave);
         view.item_hovered.disconnect (on_view_item_hovered);
     }
 
@@ -213,8 +213,8 @@ public class DemoWindow : Gtk.ApplicationWindow {
         }
     }
 
-    private void on_view_item_left (WidgetGrid.Item item) {
-        item.left ();
+    private void on_view_item_leave (WidgetGrid.Item item) {
+        item.leave ();
     }
 
     private void on_view_item_hovered (WidgetGrid.Item item, Gdk.EventMotion event) {
