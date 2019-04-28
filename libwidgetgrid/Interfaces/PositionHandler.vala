@@ -23,8 +23,8 @@ namespace WidgetGrid {
 public interface PositionHandler : Object {
     public abstract Gee.ArrayList<RowData> row_data { get; set; }
     public abstract Gee.ArrayList<Item> widget_pool { get; construct; }
-    public abstract int first_displayed_widget_index { get; set; default = 0;}
-    public abstract int last_displayed_widget_index { get; set; default = 0;}
+    public abstract int first_displayed_widget_index { get;}
+    public abstract int last_displayed_widget_index { get; }
 
     public abstract WidgetGrid.Model<DataInterface> model { get; construct; }
     public abstract int n_items { get; protected set; default = 0; }
@@ -39,8 +39,8 @@ public interface PositionHandler : Object {
         }
     }
 
-    protected abstract void position_items (int first_displayed_row, double offset);
-    protected abstract int next_widget_index (int current_index);
+    protected abstract void position_items ();
+    protected abstract Item widget_for_data_index (int data_index);
 
     public int index_below (int index) {
         index += cols;
@@ -108,7 +108,7 @@ public interface PositionHandler : Object {
         col = (int)cc;
         widget_p = {wx, wy};
 
-        return on_item_cell;
+        return row * cols + col < n_items && on_item_cell;
     }
 
     public virtual int get_index_at_row_col (int row, int col) {
@@ -180,17 +180,19 @@ public interface PositionHandler : Object {
     /** @index is the index of the last item on the previous row (or -1 for the first row).
         The row height is the largest height request of the widgets in the row
     **/
-    protected virtual int get_row_height (int widget_index, int data_index) { /* widgets previous updated */
+    protected virtual int get_row_height (int data_index) { /* widgets previous updated */
+        if (data_index < 0) {
+            critical ("invalid index");
+            return -1;
+        }
+
         var max_h = 0;
+        var d_index = data_index;
+        for (int c = 0; c < cols && d_index < model.get_n_items (); c++) {
+            var item = widget_for_data_index (d_index);
+            var data = model.lookup_index (d_index);
 
-        for (int c = 0; c < cols && data_index < model.get_n_items (); c++) {
-            var item = widget_pool[widget_index];
-            var data = model.lookup_index (data_index);
-            if (data == null) {
-                break;
-            }
-
-            update_item_with_data (item, data);
+            item.update_item (data);
             item.set_max_width (item_width);
 
             int min_h, nat_h, min_w, nat_w;
@@ -205,23 +207,17 @@ public interface PositionHandler : Object {
                 item_width = min_w - hpadding;
             }
 
-            widget_index = next_widget_index (widget_index);
-            data_index++;
+            d_index++;
         }
 
-        for (int c = 0; c < cols && data_index < model.get_n_items (); c++) {
-            var item = widget_pool[widget_index];
+        d_index = data_index;
+        for (int c = 0; c < cols && d_index < model.get_n_items (); c++) {
+            var item = widget_for_data_index (d_index);
             item.set_size_request (-1, max_h);
+            d_index++;
         }
 
         return max_h;
     }
-
-    private void update_item_with_data (Item item, DataInterface data) {
-        if (item.data_id != data.data_id) {
-            item.update_item (data);
-        }
-    }
-
 }
 }

@@ -181,15 +181,15 @@ public class DemoWindow : Gtk.ApplicationWindow {
     private void connect_view_signals () {
         view.item_clicked.connect (on_view_item_clicked);
         view.background_clicked.connect (on_view_background_clicked);
-        view.item_leave.connect (on_view_item_leave);
-        view.item_hovered.connect (on_view_item_hovered);
+//        view.item_leave.connect (on_view_item_leave);
+//        view.item_hovered.connect (on_view_item_hovered);
     }
 
     private void disconnect_view_signals () {
         view.item_clicked.disconnect (on_view_item_clicked);
         view.background_clicked.disconnect (on_view_background_clicked);
-        view.item_leave.disconnect (on_view_item_leave);
-        view.item_hovered.disconnect (on_view_item_hovered);
+//        view.item_leave.disconnect (on_view_item_leave);
+//        view.item_hovered.disconnect (on_view_item_hovered);
     }
 
     private void on_view_item_clicked (WidgetGrid.Item item, Gdk.EventButton event) {
@@ -211,14 +211,6 @@ public class DemoWindow : Gtk.ApplicationWindow {
         if (event.button == Gdk.BUTTON_SECONDARY) {
             show_background_context_menu_at ((int)(event.x), (int)(event.y));
         }
-    }
-
-    private void on_view_item_leave (WidgetGrid.Item item) {
-        item.leave ();
-    }
-
-    private void on_view_item_hovered (WidgetGrid.Item item, Gdk.EventMotion event) {
-        item.hovered (event);
     }
 
     private void show_item_context_menu (WidgetGrid.Item item, WidgetGrid.DataInterface[] selected) {

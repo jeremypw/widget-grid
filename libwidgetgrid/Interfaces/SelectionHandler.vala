@@ -96,10 +96,11 @@ public interface SelectionHandler : Object, PositionHandler {
         var rect = get_framed_rectangle ();
         bool res = false;
         int count = 0;
+        /* Closure is only applied to valid items */
         apply_to_visible_items ((item) => {
             count++;
-            var in_rect = item != null && item.intersect (rect);
-            if (item == null || (!in_rect && !deselect)) {
+            var in_rect = item.intersect (rect);
+            if (!in_rect && !deselect) {
                 return;
             } else if (in_rect || deselect) {
                 res |= select_data (item.data, in_rect);
@@ -121,6 +122,7 @@ public interface SelectionHandler : Object, PositionHandler {
     public virtual bool clear_selection () {
         selected_data.clear ();
         reset_selected_data ();
+        refresh ();
         return true;
     }
 
@@ -139,6 +141,8 @@ public interface SelectionHandler : Object, PositionHandler {
         for (int i = 0; i < model.get_n_items (); i++) {
             res |= select_data_index (i);
         }
+
+        refresh ();
 
         return false;
     }

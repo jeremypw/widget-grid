@@ -26,13 +26,8 @@ public class SimpleSortableListModel : Object, WidgetGrid.Model<WidgetGrid.DataI
         list = new Gee.LinkedList<WidgetGrid.DataInterface> ();
     }
 
-    public bool add (WidgetGrid.DataInterface data) {
-        var res = list.add (data);
-        if (res) {
-            n_items_changed (1);
-        }
-
-        return res;
+    protected bool real_add (WidgetGrid.DataInterface data) {
+        return list.add (data);
     }
 
     public bool sort (CompareDataFunc func) {
@@ -44,22 +39,12 @@ public class SimpleSortableListModel : Object, WidgetGrid.Model<WidgetGrid.DataI
         return true;
     }
 
-    public bool remove_data (WidgetGrid.DataInterface data) {
-        var res = list.remove (data);
-        if (res) {
-            n_items_changed (-1);
-        }
-
-        return res;
+    protected bool real_remove_data (WidgetGrid.DataInterface data) {
+        return list.remove (data);
     }
 
-    public bool remove_index (int index) {
-        var res = list.remove_at (index) != null;
-        if (res) {
-            n_items_changed (-1);
-        }
-
-        return res;
+    protected bool real_remove_index (int index) {
+        return list.remove_at (index) != null;
     }
 
     public WidgetGrid.DataInterface lookup_index (int index) {

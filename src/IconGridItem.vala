@@ -71,6 +71,7 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
         }
     }
 
+    public bool is_hovered { get; set; default = false; }
     public bool is_selected { get {return data != null ? data.is_selected : false;} }
     public bool is_cursor_position { get {return data != null ? data.is_cursor_position : false;} }
     public uint64 data_id { get {return data != null ? data.data_id : -1;} }
@@ -246,14 +247,24 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
             grid.unset_state_flags (Gtk.StateFlags.PRELIGHT);
         }
 
-        helper.visible = is_cursor_position || is_selected;
+        helper.visible = is_cursor_position || is_selected || is_hovered;
     }
 
     public void left () {
         update_state ();
     }
 
+    public void leave () {
+        is_hovered = false;
+        update_state ();
+    }
+
     public void hovered (Gdk.EventMotion event) {
+        update_state ();
+    }
+
+    public void enter () {
+        is_hovered = true;
         update_state ();
     }
 }
