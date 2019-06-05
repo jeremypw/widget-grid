@@ -100,14 +100,16 @@ public class View : Gtk.Overlay, ViewInterface {
     public bool fixed_item_widths { get; set; default = true;}
     public bool handle_cursor_keys { get; set; default = true; }
     public bool handle_zoom { get; set; default = true; }
+    private bool _handle_events_first = true;
     public bool handle_events_first {
         get {
-            return event_box.above_child;
+            return _handle_events_first;
         }
 
         set {
-            event_box.above_child = value;
-            scrollbar.visible = value;
+            _handle_events_first = value;
+            event_box.set_above_child (value);
+            layout.grab_focus ();
         }
     }
 
@@ -165,6 +167,7 @@ public class View : Gtk.Overlay, ViewInterface {
 
         layout = new Gtk.Layout ();
         layout.margin_start = 24; /* So that background always available */
+
         layout.can_focus = true;
 
         layout_handler = new LayoutHandler (layout, factory, model);
@@ -209,6 +212,10 @@ public class View : Gtk.Overlay, ViewInterface {
         event_box.key_press_event.connect (on_key_press_event);
 
         event_box.button_press_event.connect ((event) => {
+            if (!handle_events_first) {
+                return true;
+            }
+
             layout.grab_focus ();
             var on_item = hovered_item != null;
 
@@ -362,6 +369,10 @@ public class View : Gtk.Overlay, ViewInterface {
 
     private double total_delta_y = 0.0;
     private bool handle_scroll (Gdk.EventScroll event) {
+        if (!handle_events_first) {
+            return true;
+        }
+
         switch (event.direction) {
             case Gdk.ScrollDirection.SMOOTH:
                 double delta_x, delta_y;
@@ -387,7 +398,11 @@ public class View : Gtk.Overlay, ViewInterface {
     }
 
     public virtual bool handle_zoom_event (Gdk.EventScroll event) {
-       switch (event.direction) {
+        if (!handle_events_first) {
+            return true;
+        }
+
+        switch (event.direction) {
             case Gdk.ScrollDirection.UP:
                 zoom_in ();
                 return true;
@@ -536,13 +551,19 @@ public class View : Gtk.Overlay, ViewInterface {
         return get_index_at_pos ({x, y});
     }
 
-    public DataInterface get_data_at_pos (Gdk.Point p) {
-        return layout_handler.get_data_at_pos (get_corrected_p (p));
+    public bool get_data_at_pos (Gdk.Point p, out DataInterface data) {
+        data = null;
+        return layout_handler.get_data_at_pos (get_corrected_p (p), out data);
     }
 
-    public DataInterface get_data_coords (int x, int y) {
+    public DataInterface? get_data_coords (int x, int y) {
         Gdk.Point p = {x, y};
-        return get_data_at_pos (get_corrected_p (p));
+        DataInterface data;
+        if (get_data_at_pos (get_corrected_p (p), out data)) {
+            return data;
+        } else {
+            return null;
+        }
     }
 
     public int get_n_columns () {
@@ -588,6 +609,7 @@ public class View : Gtk.Overlay, ViewInterface {
     }
 
     public new void grab_focus () {
+        event_box.grab_focus ();
         layout.grab_focus ();
     }
 

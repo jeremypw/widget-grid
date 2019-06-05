@@ -47,8 +47,9 @@ public class SimpleSortableListModel : Object, WidgetGrid.Model<WidgetGrid.DataI
         return list.remove_at (index) != null;
     }
 
-    public WidgetGrid.DataInterface lookup_index (int index) {
-        return (WidgetGrid.DataInterface)(list.@get (index));
+    public bool lookup_index (int index, out WidgetGrid.DataInterface data) {
+        data = (WidgetGrid.DataInterface)(list.@get (index));
+        return data != null;
     }
 
     public int lookup_data (WidgetGrid.DataInterface data) {
