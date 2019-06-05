@@ -23,7 +23,8 @@
 namespace WidgetGridDemo {
 public class IconGridItemFactory : WidgetGrid.AbstractItemFactory {
     public override WidgetGrid.Item new_item () {
-        return new IconGridItem ();
+        var new_item = new IconGridItem ();
+        return new_item;
     }
 }
 }

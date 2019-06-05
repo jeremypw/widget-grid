@@ -115,11 +115,13 @@ public class DemoWindow : Gtk.ApplicationWindow {
 
     private WidgetGrid.View make_simple_view () {
         model = new WidgetGrid.SimpleModel ();
+        IconGridItem.reset_next_number ();
         return new WidgetGrid.View (new IconGridItemFactory (), model);
     }
 
     private WidgetGrid.View make_simple_sorted_view () {
         model = new SimpleSortableListModel ();
+        IconGridItem.reset_next_number ();
         return new WidgetGrid.View (new IconGridItemFactory (), model);
     }
 

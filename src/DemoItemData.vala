@@ -20,10 +20,13 @@
 ***/
 namespace WidgetGridDemo {
 public class DemoItemData : WidgetGrid.WidgetData {
+    public static int start_number = 0;
     public GOF.File file { get; construct; }
+    public int data_number;
 
     public DemoItemData (GOF.File file) {
         Object (file: file);
+        data_number = DemoItemData.start_number++;
     }
 }
 }

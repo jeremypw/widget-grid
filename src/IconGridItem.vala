@@ -34,6 +34,11 @@ public enum ClickZone {
 
 namespace WidgetGridDemo {
 public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
+    public static int next_number;
+    public static void reset_next_number () {
+        next_number = 0;
+    }
+
     private static int _max_height;
     public static int max_height { get { return _max_height; } set { _max_height = value; } default = 256;}
     private static int _min_height;
@@ -45,6 +50,7 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
     static construct {
         WidgetGrid.Item.min_height = 16;
         WidgetGrid.Item.max_height = 256;
+        next_number = 0;
     }
 
     private Gtk.Grid grid;
@@ -54,10 +60,13 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
     private Gtk.Image helper;
     private Gdk.Rectangle helper_allocation;
     private Gtk.Label label;
+    private Gtk.Label data_number_label;
+    private Gtk.Label widget_number_label;
     private int set_max_width_request = 0;
     private int total_padding;
 
     public WidgetGrid.DataInterface data { get; set; default = null; }
+    public int widget_number {get; construct; }
 
     public Gdk.Pixbuf? pix {
         get {
@@ -78,6 +87,7 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
     public GOF.File? file { get { return data != null ? ((DemoItemData)data).file : null; } }
 
     construct {
+        widget_number = IconGridItem.next_number++;
         overlay = new Gtk.Overlay ();
         frame = new Gtk.Frame (null);
         frame.shadow_type = Gtk.ShadowType.OUT;
@@ -105,6 +115,9 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
         label.set_lines (5);
         label.set_justify (Gtk.Justification.CENTER);
 
+        widget_number_label = new Gtk.Label ("Widget %i".printf (widget_number));
+        data_number_label = new Gtk.Label ("");
+
         helper = new Gtk.Image ();
         helper.margin = 0;
         helper.set_from_icon_name ("selection-add", Gtk.IconSize.LARGE_TOOLBAR);
@@ -114,6 +127,8 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
 
         grid.add (icon);
         grid.add (label);
+        grid.add (widget_number_label);
+        grid.add (data_number_label);
 
         overlay.add (grid);
         overlay.add_overlay (helper);
@@ -211,6 +226,7 @@ public class IconGridItem : Gtk.EventBox, WidgetGrid.Item {
         }
         update_state ();
         label.label = item_name;
+        data_number_label.label = "Data %i".printf(((DemoItemData)data).data_number);
         set_max_width (set_max_width_request, true);
     }
 
