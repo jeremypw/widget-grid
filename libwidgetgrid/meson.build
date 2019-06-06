@@ -2,11 +2,8 @@ libname = 'libwidgetgrid'
 libver = '0.1'
 
 valac = find_program ('valac')
-libvala_version = run_command(valac, '--api-version').stdout().strip()
-libvala_dep = dependency('libvala-@0@'.format(libvala_version))
 
 libwidgetgrid_deps = [
-    libvala_dep,
     gtk_dep,
     gee_dep
 ]
